@@ -2,3 +2,4 @@
 w16asm
 .depend
 *.o
+.DS_Store
