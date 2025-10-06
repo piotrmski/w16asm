@@ -29,7 +29,7 @@ static int hexDigitToNumber(char ch) {
 }
 
 struct TokenizerState getInitialTokenizerState() {
-    return (struct TokenizerState){ false, { (struct Token){ TokenTypeNone, 0, NULL } }, 0, "", 0, 1, false, false, ' ', ' ' };
+    return (struct TokenizerState){ false, { (struct Token){ TokenTypeNone, 0, NULL } }, 0, "", 0, 1, false, false, ' ' };
 }
 
 static void endToken(struct TokenizerState* state) {
@@ -62,9 +62,9 @@ void parseChar(struct TokenizerState* state, int ch) {
             if (ch == '_' || ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z') {
                 state->tokens[state->currentTokenIndex].tokenType = TokenTypeLabelUseOrInstruction;
             } else if (ch == '-') {
-                state->tokens[state->currentTokenIndex].tokenType = TokenTypeMinus;
+                state->tokens[state->currentTokenIndex].tokenType = _TokenTypeMinus;
             } else if (ch == '0') {
-                state->tokens[state->currentTokenIndex].tokenType = TokenTypeZero;
+                state->tokens[state->currentTokenIndex].tokenType = _TokenTypeZero;
                 state->tokens[state->currentTokenIndex].numberValue = 0;
             } else if (ch >= '1' && ch <= '9') {
                 state->tokens[state->currentTokenIndex].tokenType = TokenTypeDecimalNumber;
@@ -72,7 +72,7 @@ void parseChar(struct TokenizerState* state, int ch) {
             } else if (ch == '.') {
                 state->tokens[state->currentTokenIndex].tokenType = TokenTypeDirective;
             } else if (ch == ';') {
-                state->tokens[state->currentTokenIndex].tokenType = TokenTypeComment;
+                state->tokens[state->currentTokenIndex].tokenType = _TokenTypeComment;
             } else if (ch == '\'') {
                 state->tokens[state->currentTokenIndex].tokenType = TokenTypeNZTString;
                 state->currentTokenStringValueIndex = 0;
@@ -84,7 +84,7 @@ void parseChar(struct TokenizerState* state, int ch) {
                 printf("Error on line %d: unexpected character '%c'.", state->lineNumber, ch);
             }
             break;
-        case TokenTypeComment:
+        case _TokenTypeComment:
             if (ch == '\n') {
                 state->tokens[state->currentTokenIndex].tokenType = TokenTypeNone;
             }
@@ -93,7 +93,7 @@ void parseChar(struct TokenizerState* state, int ch) {
             if (ch == '_' || ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9') {
                 if (state->currentTokenStringValueIndex + 1 >= MAX_NAME_LEN_INCL_0) {
                     state->error = true;
-                    return printf("Error on line %d: label name too long.", state->lineNumber);
+                    printf("Error on line %d: label name too long.", state->lineNumber);
                 } else {
                     state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
                 }
@@ -132,7 +132,7 @@ void parseChar(struct TokenizerState* state, int ch) {
                 printf("Error on line %d: unexpected character '%c'.", state->lineNumber, ch);
             }
             break;
-        case TokenTypeMinus:
+        case _TokenTypeMinus:
             if (ch >= '0' && ch <= '9') {
                 state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
                 int newDigit = '0' - ch;
@@ -142,7 +142,7 @@ void parseChar(struct TokenizerState* state, int ch) {
                 printf("Error on line %d: invalid use of '-'.", state->lineNumber);
             }
             break;
-        case TokenTypeZero:
+        case _TokenTypeZero:
             if (ch >= '0' && ch <= '7') {
                 state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
                 state->tokens[state->currentTokenIndex].tokenType = TokenTypeOctalNumber;
@@ -249,17 +249,23 @@ void parseChar(struct TokenizerState* state, int ch) {
                 state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
             }
             break;
+        default: 
+            break;
     }
 }
 
 void validateEof(struct TokenizerState* state) {
     if (state->error) { return; }
 
-    if (state->tokens[state->currentTokenIndex].tokenType == TokenTypeZero) {
+    if (state->tokens[state->currentTokenIndex].tokenType == _TokenTypeComment) {
+        state->tokens[state->currentTokenIndex].tokenType = TokenTypeNone;
+    }
+
+    if (state->tokens[state->currentTokenIndex].tokenType == _TokenTypeZero) {
         state->tokens[state->currentTokenIndex].tokenType = TokenTypeDecimalNumber;
     }
 
-    if (state->tokens[state->currentTokenIndex].tokenType == TokenTypeMinus) {
+    if (state->tokens[state->currentTokenIndex].tokenType == _TokenTypeMinus) {
         state->error = true;
         printf("Error on line %d: invalid use of '-'.", state->lineNumber);
     }

@@ -9,18 +9,18 @@
 
 enum TokenType {
     TokenTypeNone,
-    TokenTypeComment,
     TokenTypeLabelDefinition,
     TokenTypeLabelUseOrInstruction,
     TokenTypeDirective,
     TokenTypeDecimalNumber,
-    TokenTypeMinus,
-    TokenTypeZero,
     TokenTypeHexNumber,
     TokenTypeOctalNumber,
     TokenTypeBinaryNumber,
     TokenTypeZTString,
-    TokenTypeNZTString
+    TokenTypeNZTString,
+    _TokenTypeComment,
+    _TokenTypeMinus,
+    _TokenTypeZero
 };
 
 struct Token {
@@ -39,7 +39,6 @@ struct TokenizerState {
     bool isEscapeSequence;
     bool isHexEscapeSequence;
     char hexEscapeSequenceChar1;
-    char hexEscapeSequenceChar2;
 };
 
 struct TokenizerState getInitialTokenizerState();

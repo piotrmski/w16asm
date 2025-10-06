@@ -30,6 +30,10 @@ int main(int argc, const char * argv[]) {
 
     if (tokenizerState.error) { return 1; }
 
+    for (int i = 0; tokenizerState.tokens[i].tokenType != TokenTypeNone; ++i) {
+        printf("%s\n", tokenizerState.tokens[i].stringValue);
+    }
+
 
     return 0;
 }
