@@ -4,11 +4,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <stdbool.h>
 
-// static char toUppercaseChar(char ch) {
-//     if (ch >= 'a' && ch <= 'z') return ch - 0x20;
-//     else return ch;
-// }
+static char toUppercaseChar(char ch) {
+    if (ch >= 'a' && ch <= 'z') return ch - 0x20;
+    else return ch;
+}
 
 // static void toUppercase(char* string) {
 //     while (*string != 0) {
@@ -16,6 +17,16 @@
 //         ++string;
 //     }
 // }
+
+static bool isHexDigit(char ch) {
+    return ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f' || ch >= 'A' && ch <= 'F';
+}
+
+static int hexDigitToNumber(char ch) {
+    return ch >= '0' && ch <= '9'
+        ? '0' - ch
+        : 10 + 'A' - toUppercaseChar(ch);
+}
 
 struct TokenizerState getInitialTokenizerState() {
     return (struct TokenizerState){ false, { (struct Token){ TokenTypeNone, 0, NULL } }, 0, "", 0, 1, false, false, ' ', ' ' };
@@ -28,6 +39,14 @@ static void endToken(struct TokenizerState* state) {
     state->tokens[state->currentTokenIndex].stringValue = malloc(length + 1);
     memcpy(state->tokens[state->currentTokenIndex].stringValue, state->currentTokenStringValue, length + 1);
     ++state->currentTokenIndex;
+}
+
+static void validateNumberInRange(struct TokenizerState* state) {
+    if (state->tokens[state->currentTokenIndex].numberValue < SHRT_MIN ||
+        state->tokens[state->currentTokenIndex].numberValue > USHRT_MAX) {
+        state->error = true;
+        printf("Error on line %d: number out of range.", state->lineNumber);
+    }
 }
  
 void parseChar(struct TokenizerState* state, int ch) {
@@ -105,11 +124,7 @@ void parseChar(struct TokenizerState* state, int ch) {
                 int sign = state->tokens[state->currentTokenIndex].numberValue >= 0 ? 1 : -1;
                 state->tokens[state->currentTokenIndex].numberValue *= 10;
                 state->tokens[state->currentTokenIndex].numberValue += sign * newDigit;
-                if (state->tokens[state->currentTokenIndex].numberValue < SHRT_MIN ||
-                    state->tokens[state->currentTokenIndex].numberValue > USHRT_MAX) {
-                    state->error = true;
-                    printf("Error on line %d: number out of range.", state->lineNumber, ch);
-                }
+                validateNumberInRange(state);
             } else if (isspace(ch)) {
                 endToken(state);
             } else {
@@ -131,11 +146,7 @@ void parseChar(struct TokenizerState* state, int ch) {
             if (ch >= '0' && ch <= '7') {
                 state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
                 state->tokens[state->currentTokenIndex].tokenType = TokenTypeOctalNumber;
-                int newDigit = '0' - ch;
-                state->tokens[state->currentTokenIndex].numberValue = newDigit;
-            } else if (ch == '8' || ch == '9') {
-                state->error = true;
-                printf("Error on line %d: invalid digit of an octal number '%c'.", state->lineNumber, ch);
+                state->tokens[state->currentTokenIndex].numberValue = '0' - ch;
             } else if (ch == 'x' || ch == 'X') {
                 state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
                 state->tokens[state->currentTokenIndex].tokenType = TokenTypeHexNumber;
@@ -151,19 +162,92 @@ void parseChar(struct TokenizerState* state, int ch) {
             }
             break;
         case TokenTypeHexNumber:
-            // TODO
+            if (isHexDigit(ch)) {
+                state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
+                state->tokens[state->currentTokenIndex].numberValue *= 0x10;
+                state->tokens[state->currentTokenIndex].numberValue += hexDigitToNumber(ch);
+                validateNumberInRange(state);
+            } else if (isspace(ch)) {
+                if (state->currentTokenStringValueIndex == 2) {
+                    state->error = true;
+                    printf("Error on line %d: number without digits.", state->lineNumber);
+                } else {
+                    endToken(state);
+                }
+            } else {
+                state->error = true;
+                printf("Error on line %d: unexpected character '%c'.", state->lineNumber, ch);
+            }
             break;
         case TokenTypeOctalNumber:
-            // TODO
+            if (ch >= '0' && ch <= '7') {
+                state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
+                state->tokens[state->currentTokenIndex].numberValue *= 010;
+                state->tokens[state->currentTokenIndex].numberValue += '0' - ch;
+                validateNumberInRange(state);
+            } else if (isspace(ch)) {
+                endToken(state);
+            } else {
+                state->error = true;
+                printf("Error on line %d: unexpected character '%c'.", state->lineNumber, ch);
+            }
             break;
         case TokenTypeBinaryNumber:
-            // TODO
+            if (ch == '0' || ch == '1') {
+                state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
+                state->tokens[state->currentTokenIndex].numberValue *= 0b10;
+                state->tokens[state->currentTokenIndex].numberValue += '0' - ch;
+                validateNumberInRange(state);
+            } else if (isspace(ch)) {
+                if (state->currentTokenStringValueIndex == 2) {
+                    state->error = true;
+                    printf("Error on line %d: number without digits.", state->lineNumber);
+                } else {
+                    endToken(state);
+                }
+            } else {
+                state->error = true;
+                printf("Error on line %d: unexpected character '%c'.", state->lineNumber, ch);
+            }
             break;
         case TokenTypeZTString:
-            // TODO
-            break;
         case TokenTypeNZTString:
-            // TODO
+            if (state->isHexEscapeSequence) {
+                if (state->hexEscapeSequenceChar1 == 0) {
+                    state->hexEscapeSequenceChar1 = ch;
+                } else if (!isHexDigit(state->hexEscapeSequenceChar1) || !isHexDigit(ch)) {
+                    state->error = true;
+                    printf("Error on line %d: invalid escape sequence '\\x%c%c'.", state->lineNumber, state->hexEscapeSequenceChar1, ch);
+                } else {
+                    char escapeSequenceChar = 0x10 * hexDigitToNumber(state->hexEscapeSequenceChar1) + hexDigitToNumber(ch);
+                    state->currentTokenStringValue[state->currentTokenStringValueIndex++] = escapeSequenceChar;
+                    state->isHexEscapeSequence = false;
+                    state->hexEscapeSequenceChar1 = 0;
+                }
+            } else if (state->isEscapeSequence) {
+                state->isEscapeSequence = false;
+
+                if (ch == 'x' || ch == 'X') {
+                    state->isHexEscapeSequence = true;
+                } else if (ch == '\'' || ch == '"' || ch == '\\') {
+                    state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
+                } else if (ch == 'n' || ch == 'N') {
+                    state->currentTokenStringValue[state->currentTokenStringValueIndex++] = '\n';
+                } else if (ch == 't' || ch == 'T') {
+                    state->currentTokenStringValue[state->currentTokenStringValueIndex++] = '\t';
+                } else if (ch == 'r' || ch == 'R') {
+                    state->currentTokenStringValue[state->currentTokenStringValueIndex++] = '\r';
+                } else {
+                    state->error = true;
+                    printf("Error on line %d: invalid escape sequence '\\%c'.", state->lineNumber, ch);
+                }
+            } else if (ch == '\\') {
+                state->isEscapeSequence = true;
+            } else if (ch == (state->tokens[state->currentTokenIndex].tokenType == TokenTypeZTString ? '"' : '\'')) {
+                endToken(state);
+            } else {
+                state->currentTokenStringValue[state->currentTokenStringValueIndex++] = ch;
+            }
             break;
     }
 }
