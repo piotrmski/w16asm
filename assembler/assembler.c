@@ -27,6 +27,7 @@ enum Directive {
 
 struct LabelInfo {
     char* name;
+    int lineNumber;
     int address;
 };
 
@@ -102,6 +103,7 @@ static bool parseToken(struct Token* token, struct AssemblerState* state, FILE* 
                 return true;
             }
             state->labelDefinitions[state->labelDefinitionsIndex].name = token->stringValue;
+            state->labelDefinitions[state->labelDefinitionsIndex].lineNumber = token->lineNumber;
             state->labelDefinitions[state->labelDefinitionsIndex++].address = state->address;
             state->lastTokenWasLabelDefinition = true;
             break;
@@ -132,6 +134,7 @@ static bool parseToken(struct Token* token, struct AssemblerState* state, FILE* 
                             return true;
                         }
                         state->labelUses[state->labelUsesIndex].name = token->stringValue;
+                        state->labelUses[state->labelUsesIndex].lineNumber = token->lineNumber;
                         state->labelUses[state->labelUsesIndex++].address = state->address;
                         break;
                     default:
@@ -146,10 +149,69 @@ static bool parseToken(struct Token* token, struct AssemblerState* state, FILE* 
             enum Directive directive = getDirective(token->stringValue);
             switch (directive) {
                 case DirectiveOrg:
-                    // get next token; should be number within memory space; update last label
+                    getToken(&token, filePtr);
+                    switch (token->type) {
+                        case TokenTypeDecimalNumber:
+                        case TokenTypeHexNumber:
+                        case TokenTypeOctalNumber:
+                        case TokenTypeBinaryNumber:
+                            if (token->numberValue < 0 || token->numberValue >= ADDRESS_SPACE_SIZE) {
+                                printf("Error on line %d: attempting to set origin to invalid address \"%d\".", token->lineNumber, token->numberValue);
+                                return true;
+                            }
+                            state->address = token->numberValue;
+                            if (state->lastTokenWasLabelDefinition) {
+                                state->labelDefinitions[state->labelDefinitionsIndex - 1].address = state->address;
+                            }
+                            break;
+                        default:
+                            printf("Error on line %d: unexpected token following .ORG.", token->lineNumber);
+                            return true;
+                    }
                     break;
                 case DirectiveFill:
-                    // get 2 next tokens; first should be any number or NZTString length=1; second should be positive number
+                    unsigned short valueToFill;
+                    unsigned short fillCount;
+                    getToken(&token, filePtr);
+                    switch (token->type) {
+                        case TokenTypeDecimalNumber:
+                        case TokenTypeHexNumber:
+                        case TokenTypeOctalNumber:
+                        case TokenTypeBinaryNumber:
+                            valueToFill = token->numberValue;
+                            break;
+                        case TokenTypeNZTString:
+                            if (token->stringValue[0] == 0 || token->stringValue[1] != 0) {
+                                printf("Error on line %d: expected no more or less than one character.", token->lineNumber);
+                                return true;
+                            }
+                            valueToFill = token->stringValue[0];
+                            break;
+                        default:
+                            printf("Error on line %d: unexpected token following .FILL.", token->lineNumber);
+                            return true;
+                    }
+                    getToken(&token, filePtr);
+                    switch (token->type) {
+                        case TokenTypeDecimalNumber:
+                        case TokenTypeHexNumber:
+                        case TokenTypeOctalNumber:
+                        case TokenTypeBinaryNumber:
+                            if (token->numberValue < 1) {
+                                printf("Error on line %d: fill count must be positive.", token->lineNumber);
+                                return true;
+                            }
+                            fillCount = token->numberValue;
+                            break;
+                        default:
+                            printf("Error on line %d: unexpected token following .FILL value.", token->lineNumber);
+                            return true;
+                    }
+                    for (int i = 0; i < fillCount; ++i) {
+                        if (isMemoryViolation(state, token)) { return true; }
+                        state->programMemory[state->address] = valueToFill;
+                        state->programMemoryWritten[state->address++] = true;
+                    }
                     break;
                 default:
                     printf("Error on line %d: invalid directive \"%s\".", token->lineNumber, token->stringValue);
@@ -200,6 +262,16 @@ void assemble(FILE* filePtr) {
         if (parseToken(&token, &state, filePtr)) { return; }
     } while (token.type != TokenTypeNone && token.type != TokenTypeError);
 
-    // todo if label at the end then error
-    // todo match label uses to definitions
+    if (state.lastTokenWasLabelDefinition) {
+        printf("Error on line %d: unexpected label definition at the end of the file.", token.lineNumber);
+        return true;
+    }
+
+    for (int labelUsesIndex = 0; labelUsesIndex < state.labelUsesIndex; ++labelUsesIndex) {
+        struct LabelInfo* labelDefinition = findLabelDefinition(&state, state.labelUses[labelUsesIndex].name);
+        if (labelDefinition == NULL) {
+            printf("Error on line %d: label \"%s\" is undefined.", state.labelUses[labelUsesIndex].lineNumber, state.labelUses[labelUsesIndex].name);
+        }
+        state.programMemory[state.labelUses[labelUsesIndex].address] |= labelDefinition->address;
+    }
 }
