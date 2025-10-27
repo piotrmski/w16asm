@@ -1,24 +1,20 @@
-appname := w16asm
+appName := w16asm
+testAppName := w16asm-test
 CFLAGS  := -std=c23
 
-srcfiles := $(shell find src -name "*.c")
-objects  := $(patsubst %.c, %.o, $(srcfiles))
+srcFiles := $(shell find src -name "*.c")
+objects  := $(patsubst %.c, %.o, $(srcFiles))
 
-all: $(appname)
+testSrcFiles := $(shell find test -name "*.c")
+testObjects  := $(patsubst %.c, %.o, $(testSrcFiles))
 
-$(appname): $(objects)
-	$(CC) $(CFLAGS) -o $(appname) $(objects)
+all: $(appName) $(testAppName)
 
-depend: .depend
+$(appName): $(objects)
+	$(CC) $(CFLAGS) -o $(appName) $(objects)
 
-.depend: $(srcfiles)
-	rm -f ./.depend
-	$(CC) -MM $^>>./.depend;
+$(testAppName): $(testObjects)
+	$(CC) $(CFLAGS) -o $(testAppName) $(testObjects)
 
 clean:
-	rm -f $(objects)
-
-dist-clean: clean
-	rm -f *~ .depend
-
-include .depend
+	rm -f $(objects) $(testObjects)
