@@ -1,6 +1,5 @@
 .vscode
-w16asm
-w16asm-test
+test-runtime
 .depend
 *.o
 .DS_Store

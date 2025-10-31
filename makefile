@@ -8,13 +8,13 @@ objects  := $(patsubst %.c, %.o, $(srcFiles))
 testSrcFiles := $(shell find test -name "*.c")
 testObjects  := $(patsubst %.c, %.o, $(testSrcFiles))
 
-all: $(appName) $(testAppName)
+all: $(appName)
 
 $(appName): $(objects)
-	$(CC) $(CFLAGS) -o $(appName) $(objects)
+	$(CC) $(CFLAGS) -o dist/$(appName) $(objects)
 
 $(testAppName): $(testObjects)
-	$(CC) $(CFLAGS) -o $(testAppName) $(testObjects)
+	$(CC) $(CFLAGS) -o test-runtime/$(testAppName) $(testObjects)
 
 clean:
 	rm -f $(objects) $(testObjects)
