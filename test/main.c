@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "../common/exit-code.h"
 
 struct TestResults {
     int passed;
@@ -63,14 +64,15 @@ bool filesIdentical(char* path1, char* path2) {
 }
 
 int executeTestCase(char* testName) {
-    char syscall[2047];
+    char syscall[4096];
     sprintf(syscall, "./dist/w16asm test/test-cases/%s/test.asm test/test-cases/%s/actual.bin test/test-cases/%s/actual.csv", testName, testName, testName);
-    return system(syscall);
+    int status = system(syscall);
+    return WEXITSTATUS(status);
 }
 
-void expectErrorCode(const char* testName, int expectedErrorCode, struct TestResults* testResults) {
-    char actualBinPath[1023];
-    char actualCsvPath[1023];
+void expectErrorCode(char* testName, int expectedErrorCode, struct TestResults* testResults) {
+    char actualBinPath[1024];
+    char actualCsvPath[1024];
     sprintf(actualBinPath, "test/test-cases/%s/actual.bin", testName);
     sprintf(actualCsvPath, "test/test-cases/%s/actual.csv", testName);
     remove(actualBinPath);
@@ -80,23 +82,25 @@ void expectErrorCode(const char* testName, int expectedErrorCode, struct TestRes
 
     if (returnCode != expectedErrorCode) {
         ++testResults->failed;
-        printf("[FAIL] %s - error code %d was expected, but code %d was produced.", testName, expectedErrorCode, returnCode);
+        printf("[FAIL] %s - error code %d was expected, but code %d was produced.\n", testName, expectedErrorCode, returnCode);
+        return;
     }
 
     if (fileExists(actualBinPath) || fileExists(actualCsvPath)) {
         ++testResults->failed;
-        printf("[FAIL] %s - the expected error code was produced, however output files were produced as well, when none were expected.", testName);
+        printf("[FAIL] %s - the expected error code was produced, however output files were produced as well, when none were expected.\n", testName);
+        return;
     }
 
     ++testResults->passed;
-    printf("[PASS] %s", testName);
+    printf("[PASS] %s\n", testName);
 }
 
-void expectSuccess(const char* testName, struct TestResults* testResults) {
-    char expectedBinPath[1023];
-    char expectedCsvPath[1023];
-    char actualBinPath[1023];
-    char actualCsvPath[1023];
+void expectSuccess(char* testName, struct TestResults* testResults) {
+    char expectedBinPath[1024];
+    char expectedCsvPath[1024];
+    char actualBinPath[1024];
+    char actualCsvPath[1024];
     sprintf(expectedBinPath, "test/test-cases/%s/expected.bin", testName);
     sprintf(expectedCsvPath, "test/test-cases/%s/expected.csv", testName);
     sprintf(actualBinPath, "test/test-cases/%s/actual.bin", testName);
@@ -108,27 +112,30 @@ void expectSuccess(const char* testName, struct TestResults* testResults) {
 
     if (returnCode != 0) {
         ++testResults->failed;
-        printf("[FAIL] %s - error code 0 was expected, but code %d was produced.", testName, returnCode);
+        printf("[FAIL] %s - error code 0 was expected, but code %d was produced.\n", testName, returnCode);
+        return;
     }
 
     if (!filesIdentical(expectedBinPath, actualBinPath)) {
         ++testResults->failed;
-        printf("[FAIL] %s - produced binary file was different, than expected.", testName, returnCode);
+        printf("[FAIL] %s - produced binary file was different, than expected.\n", testName);
+        return;
     }
 
     if (!filesIdentical(expectedCsvPath, actualCsvPath)) {
         ++testResults->failed;
-        printf("[FAIL] %s - produced symbols file was different, than expected.", testName, returnCode);
+        printf("[FAIL] %s - produced symbols file was different, than expected.\n", testName);
+        return;
     }
 
     ++testResults->passed;
-    printf("[PASS] %s", testName);
+    printf("[PASS] %s\n", testName);
 }
 
 int main(int argc, const char * argv[]) {
     struct TestResults testResults = { 0, 0 };
 
-    // TODO
+    expectErrorCode("assemble-empty-program", ExitCodeResultProgramEmpty, &testResults);
 
     printf("Tests passed: %d\nTests failed: %d\n", testResults.passed, testResults.failed);
 }

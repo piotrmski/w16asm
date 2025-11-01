@@ -21,20 +21,6 @@ int main(int argc, const char * argv[]) {
 
     fclose(asmFile);
 
-    FILE* binFile = fopen(input.binaryFilePath, "wb");
-
-    if (binFile == NULL) {
-        printf("Error: could not write to file \"%s\".\n", input.binaryFilePath);
-        exit(ExitCodeCouldNotWriteBinFile);
-    }
-
-    FILE* symbolsFile = input.symbolsFilePath == NULL ? NULL : fopen(input.symbolsFilePath, "w");
-
-    if (input.symbolsFilePath != NULL && symbolsFile == NULL) {
-        printf("Error: could not write to file \"%s\".\n", input.symbolsFilePath);
-        exit(ExitCodeCouldNotWriteSymbolsFile);
-    }
-
     int programSize = 0;
 
     for (int i = 0; i < PROGRAM_MEMORY_SIZE; ++i) {
@@ -48,9 +34,23 @@ int main(int argc, const char * argv[]) {
         exit(ExitCodeResultProgramEmpty);
     }
 
+    FILE* binFile = fopen(input.binaryFilePath, "wb");
+
+    if (binFile == NULL) {
+        printf("Error: could not write to file \"%s\".\n", input.binaryFilePath);
+        exit(ExitCodeCouldNotWriteBinFile);
+    }
+
     fwrite(result.programMemory, sizeof(unsigned short), programSize, binFile);
 
     fclose(binFile);
+
+    FILE* symbolsFile = input.symbolsFilePath == NULL ? NULL : fopen(input.symbolsFilePath, "w");
+
+    if (input.symbolsFilePath != NULL && symbolsFile == NULL) {
+        printf("Error: could not write to file \"%s\".\n", input.symbolsFilePath);
+        exit(ExitCodeCouldNotWriteSymbolsFile);
+    }
 
     for (int i = 0; i < PROGRAM_MEMORY_SIZE; ++i) {
         if (result.dataType[i] != DataTypeNone) {

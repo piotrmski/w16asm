@@ -3,7 +3,7 @@
 
 enum ExitCode {
     ExitCodeSuccess = 0,
-    ExitCodeCouldNotReadAsmFile = 128,
+    ExitCodeCouldNotReadAsmFile,
     ExitCodeCouldNotWriteBinFile,
     ExitCodeCouldNotWriteSymbolsFile,
     ExitCodeResultProgramEmpty,
