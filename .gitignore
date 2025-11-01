@@ -1,5 +1,3 @@
 .vscode
-test-runtime
-.depend
 *.o
 .DS_Store

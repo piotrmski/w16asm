@@ -14,7 +14,7 @@ $(appName): $(objects)
 	$(CC) $(CFLAGS) -o dist/$(appName) $(objects)
 
 $(testAppName): $(testObjects)
-	$(CC) $(CFLAGS) -o test-runtime/$(testAppName) $(testObjects)
+	$(CC) $(CFLAGS) -o dist/$(testAppName) $(testObjects)
 
 clean:
 	rm -f $(objects) $(testObjects)
