@@ -151,7 +151,6 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
                         printf("Error on line %d: unexpected token following instruction name.\n", token->lineNumber);
                         exit(ExitCodeUnexpectedTokenAfterInstruction);
                 }
-                result->programMemory[state->address] = opcode;
                 result->programMemory[state->address + 1] = opcode >> 8;
                 state->address += 2;
             }
@@ -301,6 +300,7 @@ struct AssemblerResult assemble(FILE* filePtr) {
     for (int labelUsesIndex = 0; labelUsesIndex < state.labelUsesIndex; ++labelUsesIndex) {
         struct LabelInfo* labelDefinition = findLabelDefinition(&state, &state.labelUses[labelUsesIndex]);
         result.programMemory[state.labelUses[labelUsesIndex].address] |= labelDefinition->address;
+        result.programMemory[state.labelUses[labelUsesIndex].address + 1] |= labelDefinition->address >> 8;
     }
 
     for (int labelDefinitionIndex = state.labelDefinitionsIndex - 1; labelDefinitionIndex >= 0; --labelDefinitionIndex) {
