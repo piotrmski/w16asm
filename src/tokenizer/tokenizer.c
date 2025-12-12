@@ -30,7 +30,7 @@ static int hexDigitToNumber(char ch) {
         : 10 + uc(ch) - 'A';
 }
 
-static void validateNumberInRange(struct Token* token) {
+static void validateNumberLiteralInRange(struct Token* token) {
     if (token->numberValue < SHRT_MIN ||
         token->numberValue > USHRT_MAX) {
         printf("Error on line %d: number out of range.\n", token->lineNumber);
@@ -123,7 +123,7 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
                 int sign = token->numberValue >= 0 ? 1 : -1;
                 token->numberValue *= 10;
                 token->numberValue += sign * newDigit;
-                validateNumberInRange(token);
+                validateNumberLiteralInRange(token);
             } else if (isspace(ch)) {
                 return submitToken(token, state);
             } else {
@@ -165,7 +165,7 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
                 state->stringValue[state->stringValueIndex++] = ch;
                 token->numberValue *= 0x10;
                 token->numberValue += hexDigitToNumber(ch);
-                validateNumberInRange(token);
+                validateNumberLiteralInRange(token);
             } else if (isspace(ch)) {
                 if (state->stringValueIndex == 2) {
                     printf("Error on line %d: number without digits.\n", token->lineNumber);
@@ -183,7 +183,7 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
                 state->stringValue[state->stringValueIndex++] = ch;
                 token->numberValue *= 010;
                 token->numberValue += ch - '0';
-                validateNumberInRange(token);
+                validateNumberLiteralInRange(token);
             } else if (isspace(ch)) {
                 return submitToken(token, state);
             } else {
@@ -196,7 +196,7 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
                 state->stringValue[state->stringValueIndex++] = ch;
                 token->numberValue *= 0b10;
                 token->numberValue += ch - '0';
-                validateNumberInRange(token);
+                validateNumberLiteralInRange(token);
             } else if (isspace(ch)) {
                 if (state->stringValueIndex == 2) {
                     printf("Error on line %d: number without digits.\n", token->lineNumber);

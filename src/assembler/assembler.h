@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "../tokenizer/tokenizer.h"
 
-#define PROGRAM_MEMORY_SIZE 0x1fff
 #define ADDRESS_SPACE_SIZE 0x2000
 
 enum DataType {
@@ -14,8 +13,8 @@ enum DataType {
 };
 
 struct AssemblerResult {
-    unsigned short programMemory[PROGRAM_MEMORY_SIZE];
-    enum DataType dataType[PROGRAM_MEMORY_SIZE];
+    unsigned char programMemory[ADDRESS_SPACE_SIZE];
+    enum DataType dataType[ADDRESS_SPACE_SIZE];
     char* labelNameByAddress[ADDRESS_SPACE_SIZE];
 };
 

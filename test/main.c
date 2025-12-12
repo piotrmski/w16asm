@@ -67,7 +67,7 @@ int executeTestCase(char* testName) {
     char syscall[4096];
     sprintf(syscall, "./dist/w16asm test/test-cases/%s/test.asm test/test-cases/%s/actual.bin test/test-cases/%s/actual.csv", testName, testName, testName);
     int status = system(syscall);
-    return WEXITSTATUS(status);
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
 void expectErrorCode(char* testName, int expectedErrorCode, struct TestResults* testResults) {

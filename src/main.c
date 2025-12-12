@@ -5,8 +5,6 @@
 #include "assembler/assembler.h"
 #include "../common/exit-code.h"
 
-#define IO_INTERFACE_ADDRESS 0x1fff
-
 int main(int argc, const char * argv[]) {
     struct ProgramInput input = getProgramInput(argc, argv);
 
@@ -23,7 +21,7 @@ int main(int argc, const char * argv[]) {
 
     int programSize = 0;
 
-    for (int i = 0; i < PROGRAM_MEMORY_SIZE; ++i) {
+    for (int i = 0; i < ADDRESS_SPACE_SIZE; ++i) {
         if (result.programMemory[i] != 0) {
             programSize = i + 1;
         }
@@ -41,7 +39,7 @@ int main(int argc, const char * argv[]) {
         exit(ExitCodeCouldNotWriteBinFile);
     }
 
-    fwrite(result.programMemory, sizeof(unsigned short), programSize, binFile);
+    fwrite(result.programMemory, sizeof(unsigned char), programSize, binFile);
 
     fclose(binFile);
 
@@ -52,7 +50,7 @@ int main(int argc, const char * argv[]) {
         exit(ExitCodeCouldNotWriteSymbolsFile);
     }
 
-    for (int i = 0; i < PROGRAM_MEMORY_SIZE; ++i) {
+    for (int i = 0; i < ADDRESS_SPACE_SIZE; ++i) {
         if (result.dataType[i] != DataTypeNone) {
             fprintf(symbolsFile, "0x%04X,", i);
             switch (result.dataType[i]) {
@@ -70,10 +68,6 @@ int main(int argc, const char * argv[]) {
             }
             fprintf(symbolsFile, ",%s\n", result.labelNameByAddress[i] == NULL ? "" : result.labelNameByAddress[i]);
         }
-    }
-
-    if (result.labelNameByAddress[IO_INTERFACE_ADDRESS] != NULL) {
-        fprintf(symbolsFile, "0x1FFF,char,%s\n", result.labelNameByAddress[IO_INTERFACE_ADDRESS]);
     }
     
     fclose(symbolsFile);
