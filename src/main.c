@@ -29,7 +29,7 @@ int main(int argc, const char * argv[]) {
 
     for (int i = 0; i < ADDRESS_SPACE_SIZE; ++i) {
         if (result.dataType[i] != DataTypeNone) {
-            programSize = i + 1;
+            programSize = i + (result.dataType[i] == DataTypeInstruction ? 2 : 1);
         }
     }
 

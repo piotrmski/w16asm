@@ -144,9 +144,28 @@ static void expectSuccess(char* testName, struct TestResults* testResults) {
 int main(int argc, const char * argv[]) {
     struct TestResults testResults = { 0, 0 };
 
-    expectErrorCode("assemble-empty-program", ExitCodeResultProgramEmpty, &testResults);
+    expectErrorCode("empty-program-should-fail", ExitCodeResultProgramEmpty, &testResults);
     expectSuccess("validate-basic-functionality", &testResults);
     expectSuccess("label-name-should-allow-valid-length-and-characters", &testResults);
+    expectErrorCode("label-name-should-disallow-invalid-length", ExitCodeLabelNameTooLong, &testResults);
+    expectErrorCode("label-name-should-disallow-invalid-character", ExitCodeUnexpectedCharacter, &testResults);
+    expectSuccess("declaration-should-allow-near-memory-range", &testResults);
+    expectErrorCode("declaration-should-disallow-beyond-memory-range", ExitCodeDeclaringValueOutOfMemoryRange, &testResults);
+    expectSuccess("instruction-should-allow-near-memory-range", &testResults);
+    expectErrorCode("instruction-should-disallow-beyond-memory-range", ExitCodeDeclaringValueOutOfMemoryRange, &testResults);
+    expectErrorCode("memory-overwrite-should-fail", ExitCodeMemoryValueOverridden, &testResults);
+    expectErrorCode("number-literals-binary-should-disallow-no-digits", ExitCodeNumberWithoutDigits, &testResults);
+    expectErrorCode("number-literals-hex-should-disallow-no-digits", ExitCodeNumberWithoutDigits, &testResults);
+    expectSuccess("number-literals-should-allow-in-range", &testResults);
+    expectErrorCode("number-literals-should-disallow-too-high", ExitCodeNumberLiteralOutOutRange, &testResults);
+    expectErrorCode("number-literals-should-disallow-too-low", ExitCodeNumberLiteralOutOutRange, &testResults);
+    expectErrorCode("origin-should-disallow-address-beyond-memory-range", ExitCodeOriginOutOfMemoryRange, &testResults);
+    expectErrorCode("origin-should-disallow-negative-address", ExitCodeOriginOutOfMemoryRange, &testResults);
+    expectErrorCode("reference-should-disallow-address-beyond-memory-range", ExitCodeReferenceToInvalidAddress, &testResults);
+    expectErrorCode("reference-should-disallow-negative-address", ExitCodeReferenceToInvalidAddress, &testResults);
+    expectErrorCode("string-should-disallow-unterminated", ExitCodeUnterminatedString, &testResults);
+    expectErrorCode("fill-should-disallow-multiple-characters", ExitCodeFillValueStringNotAChar, &testResults);
+    expectErrorCode("fill-should-disallow-negative-count", ExitCodeFillCountNotPositive, &testResults);
 
     printf("Tests passed: %d\nTests failed: %d\n", testResults.passed, testResults.failed);
 }

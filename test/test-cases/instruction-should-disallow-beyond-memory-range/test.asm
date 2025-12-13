@@ -1,0 +1,1 @@
+loop: .org 0x1fff jmp loop
