@@ -30,10 +30,10 @@ static int hexDigitToNumber(char ch) {
         : 10 + uc(ch) - 'A';
 }
 
-static void validateNumberLiteralInRange(struct Token* token) {
+static void assertNumberInRange(struct Token* token) {
     if (token->numberValue < SHRT_MIN ||
         token->numberValue > USHRT_MAX) {
-        printf("Error on line %d: number out of range.\n", token->lineNumber);
+        printf("Error on line %d: number %d is out of range.\n", token->lineNumber, token->numberValue);
         exit(ExitCodeNumberLiteralOutOutRange);
     }
 }
@@ -44,6 +44,10 @@ static bool submitToken(struct Token* token, struct TokenizerState* state) {
     token->stringValue = malloc(fullLength);
     memcpy(token->stringValue, state->stringValue, fullLength);
     return true;
+}
+
+static bool isEndOfToken(int ch) {
+    return ch == ';' || isspace(ch);
 }
 
 // Returns true if an entire token was parsed, or false if another character needs to be parsed
@@ -96,7 +100,7 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
                 } else {
                     state->stringValue[state->stringValueIndex++] = ch;
                 }
-            } else if (ch == ':' || isspace(ch)) {
+            } else if (ch == ':' || isEndOfToken(ch)) {
                 if (ch == ':') {
                     token->type = TokenTypeLabelDefinition;
                 }
@@ -109,7 +113,7 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
         case TokenTypeDirective:
             if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z') {
                 state->stringValue[state->stringValueIndex++] = ch;
-            } else if (isspace(ch)) {
+            } else if (isEndOfToken(ch)) {
                 return submitToken(token, state);
             } else {
                 printf("Error on line %d: unexpected character '%c'.\n", token->lineNumber, ch);
@@ -123,8 +127,8 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
                 int sign = token->numberValue >= 0 ? 1 : -1;
                 token->numberValue *= 10;
                 token->numberValue += sign * newDigit;
-                validateNumberLiteralInRange(token);
-            } else if (isspace(ch)) {
+                assertNumberInRange(token);
+            } else if (isEndOfToken(ch)) {
                 return submitToken(token, state);
             } else {
                 printf("Error on line %d: unexpected character '%c'.\n", token->lineNumber, ch);
@@ -136,8 +140,9 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
                 state->stringValue[state->stringValueIndex++] = ch;
                 int newDigit = ch - '0';
                 token->numberValue = -newDigit;
+                token->type = TokenTypeDecimalNumber;
             } else {
-                printf("Error on line %d: invalid use of '-'.\n", token->lineNumber);
+                printf("Error on line %d: character '%c' (0x%02X) following '-' is invalid.\n", token->lineNumber, ch, ch);
                 exit(ExitCodeInvalidMinus);
             }
             break;
@@ -152,7 +157,7 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
             } else if (ch == 'b' || ch == 'B') {
                 state->stringValue[state->stringValueIndex++] = ch;
                 token->type = TokenTypeBinaryNumber;
-            } else if (isspace(ch)) {
+            } else if (isEndOfToken(ch)) {
                 token->type = TokenTypeDecimalNumber;
                 return submitToken(token, state);
             } else {
@@ -165,8 +170,8 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
                 state->stringValue[state->stringValueIndex++] = ch;
                 token->numberValue *= 0x10;
                 token->numberValue += hexDigitToNumber(ch);
-                validateNumberLiteralInRange(token);
-            } else if (isspace(ch)) {
+                assertNumberInRange(token);
+            } else if (isEndOfToken(ch)) {
                 if (state->stringValueIndex == 2) {
                     printf("Error on line %d: number without digits.\n", token->lineNumber);
                     exit(ExitCodeNumberWithoutDigits);
@@ -183,8 +188,8 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
                 state->stringValue[state->stringValueIndex++] = ch;
                 token->numberValue *= 010;
                 token->numberValue += ch - '0';
-                validateNumberLiteralInRange(token);
-            } else if (isspace(ch)) {
+                assertNumberInRange(token);
+            } else if (isEndOfToken(ch)) {
                 return submitToken(token, state);
             } else {
                 printf("Error on line %d: unexpected character '%c'.\n", token->lineNumber, ch);
@@ -196,8 +201,8 @@ static bool parseChar(struct Token* token, struct TokenizerState* state, int ch)
                 state->stringValue[state->stringValueIndex++] = ch;
                 token->numberValue *= 0b10;
                 token->numberValue += ch - '0';
-                validateNumberLiteralInRange(token);
-            } else if (isspace(ch)) {
+                assertNumberInRange(token);
+            } else if (isEndOfToken(ch)) {
                 if (state->stringValueIndex == 2) {
                     printf("Error on line %d: number without digits.\n", token->lineNumber);
                     exit(ExitCodeNumberWithoutDigits);
@@ -268,7 +273,7 @@ static void validateEof(struct Token* token, struct TokenizerState* state) {
     }
 
     if (token->type == _TokenTypeMinus) {
-        printf("Error on line %d: invalid use of '-'.\n", token->lineNumber);
+        printf("Error on line %d: '-' can't be at the end of the file.\n", token->lineNumber);
         exit(ExitCodeInvalidMinus);
     }
 
@@ -302,7 +307,12 @@ void getToken(struct Token* token, FILE* filePtr) {
     int ch;
 
     while ((ch = getc(filePtr)) != EOF) {
-        if (parseChar(token, &state, ch)) { return; }
+        if (parseChar(token, &state, ch)) {
+            if (ch == ';') {
+                ungetc(ch, filePtr);
+            }
+            return;
+        }
     }
 
     validateEof(token, &state);

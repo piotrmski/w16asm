@@ -9,7 +9,12 @@ struct TestResults {
     int failed;
 };
 
-bool fileExists(char* path) {
+enum FileType {
+    FileTypeBinary,
+    FileTypeText
+};
+
+static bool fileExists(char* path) {
     FILE* file = fopen(path, "r");
     if (file == NULL) {
         return false;
@@ -19,43 +24,60 @@ bool fileExists(char* path) {
     }
 }
 
-bool filesIdentical(char* path1, char* path2) {
-    FILE* file1 = fopen(path1, "rb");
+static bool filesIdentical(char* testName, char* fileExtension, enum FileType fileType) {
+    char expectedFilePath[1024];
+    char actualFilePath[1024];
 
-    if (file1 == NULL) { 
+    sprintf(expectedFilePath, "test/test-cases/%s/expected.%s", testName, fileExtension);
+    sprintf(actualFilePath, "test/test-cases/%s/actual.%s", testName, fileExtension);
+
+    FILE* expectedFile = fopen(expectedFilePath, "rb");
+
+    if (expectedFile == NULL) { 
+        printf("[FAIL] %s - reference file \"%s\" is missing, the test can't be evaluated.\n", testName, expectedFilePath);
         return false;
     }
 
-    FILE* file2 = fopen(path2, "rb");
+    FILE* actualFile = fopen(actualFilePath, "rb");
 
-    if (file2 == NULL) { 
-        fclose(file1);
+    if (actualFile == NULL) { 
+        fclose(expectedFile);
+        printf("[FAIL] %s - file \"%s\" was not produced.\n", testName, actualFilePath);
         return false; 
     }
 
-    int size1;
-    int size2;
+    int expectedFileSize;
+    int actualFileSize;
           
-    fseek(file1, 0, SEEK_END);          
-    size1 = ftell(file1);            
-    rewind(file1);           
+    fseek(expectedFile, 0, SEEK_END);          
+    expectedFileSize = ftell(expectedFile);            
+    rewind(expectedFile);           
           
-    fseek(file2, 0, SEEK_END);          
-    size2 = ftell(file2);            
-    rewind(file2);   
+    fseek(actualFile, 0, SEEK_END);          
+    actualFileSize = ftell(actualFile);            
+    rewind(actualFile);   
     
-    if (size1 != size2) {
+    if (expectedFileSize != actualFileSize) {
+        printf("[FAIL] %s - file \"%s\" was expected to be %d bytes, is %d bytes.\n", testName, actualFilePath, expectedFileSize, actualFileSize);
         return false;
     }
 
-    unsigned char byte1;
-    unsigned char byte2;
+    unsigned char expectedFileByte;
+    unsigned char producedFileByte;
 
-    for (int i = 0; i < size1; ++i) {
-        fread(&byte1, sizeof(unsigned char), 1, file1);
-        fread(&byte2, sizeof(unsigned char), 1, file2);
+    for (int i = 0; i < expectedFileSize; ++i) {
+        fread(&expectedFileByte, sizeof(unsigned char), 1, expectedFile);
+        fread(&producedFileByte, sizeof(unsigned char), 1, actualFile);
 
-        if (byte1 != byte2) {
+        if (expectedFileByte != producedFileByte) {
+            switch (fileType) {
+                case FileTypeBinary:
+                    printf("[FAIL] %s - file \"%s\" at byte %d (0x%04X): expected 0x%02X, is 0x%02X.\n", testName, actualFilePath, i, i, expectedFileByte, producedFileByte);
+                    break;
+                case FileTypeText:
+                    printf("[FAIL] %s - file \"%s\" at byte %d (0x%04X): expected '%c' (0x%02X), is '%c' (0x%02X).\n", testName, actualFilePath, i, i, expectedFileByte, expectedFileByte, producedFileByte, producedFileByte);
+                    break;
+            }
             return false;
         }
     }
@@ -63,14 +85,14 @@ bool filesIdentical(char* path1, char* path2) {
     return true;
 }
 
-int executeTestCase(char* testName) {
+static int executeTestCase(char* testName) {
     char syscall[4096];
     sprintf(syscall, "./dist/w16asm test/test-cases/%s/test.asm test/test-cases/%s/actual.bin test/test-cases/%s/actual.csv", testName, testName, testName);
     int status = system(syscall);
     return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
-void expectErrorCode(char* testName, int expectedErrorCode, struct TestResults* testResults) {
+static void expectErrorCode(char* testName, int expectedErrorCode, struct TestResults* testResults) {
     char actualBinPath[1024];
     char actualCsvPath[1024];
     sprintf(actualBinPath, "test/test-cases/%s/actual.bin", testName);
@@ -96,18 +118,7 @@ void expectErrorCode(char* testName, int expectedErrorCode, struct TestResults* 
     printf("[PASS] %s\n", testName);
 }
 
-void expectSuccess(char* testName, struct TestResults* testResults) {
-    char expectedBinPath[1024];
-    char expectedCsvPath[1024];
-    char actualBinPath[1024];
-    char actualCsvPath[1024];
-    sprintf(expectedBinPath, "test/test-cases/%s/expected.bin", testName);
-    sprintf(expectedCsvPath, "test/test-cases/%s/expected.csv", testName);
-    sprintf(actualBinPath, "test/test-cases/%s/actual.bin", testName);
-    sprintf(actualCsvPath, "test/test-cases/%s/actual.csv", testName);
-    remove(actualBinPath);
-    remove(actualCsvPath);
-
+static void expectSuccess(char* testName, struct TestResults* testResults) {
     int returnCode = executeTestCase(testName);
 
     if (returnCode != 0) {
@@ -116,15 +127,13 @@ void expectSuccess(char* testName, struct TestResults* testResults) {
         return;
     }
 
-    if (!filesIdentical(expectedBinPath, actualBinPath)) {
+    if (!filesIdentical(testName, "bin", FileTypeBinary)) {
         ++testResults->failed;
-        printf("[FAIL] %s - produced binary file was different, than expected.\n", testName);
         return;
     }
 
-    if (!filesIdentical(expectedCsvPath, actualCsvPath)) {
+    if (!filesIdentical(testName, "csv", FileTypeText)) {
         ++testResults->failed;
-        printf("[FAIL] %s - produced symbols file was different, than expected.\n", testName);
         return;
     }
 
@@ -136,6 +145,7 @@ int main(int argc, const char * argv[]) {
     struct TestResults testResults = { 0, 0 };
 
     expectErrorCode("assemble-empty-program", ExitCodeResultProgramEmpty, &testResults);
+    expectSuccess("validate-basic-functionality", &testResults);
 
     printf("Tests passed: %d\nTests failed: %d\n", testResults.passed, testResults.failed);
 }

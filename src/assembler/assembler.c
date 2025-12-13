@@ -43,7 +43,7 @@ struct AssemblerState {
     int labelUsesIndex;
 };
 
-static void checkForMemoryViolation(struct AssemblerState* state, struct Token* token, int address) {
+static void assertNoMemoryViolation(struct AssemblerState* state, struct Token* token, int address) {
     if (address >= ADDRESS_SPACE_SIZE) {
         printf("Error on line %d: attempting to declare memory value outside of address space.\n", token->lineNumber);
         exit(ExitCodeDeclaringValueOutOfMemoryRange);
@@ -55,10 +55,10 @@ static void checkForMemoryViolation(struct AssemblerState* state, struct Token* 
     }
 }
 
-static void validateNumberLiteralInRange(struct Token* token) {
+static void assertNumberLiteralInRange(struct Token* token) {
     if (token->numberValue < CHAR_MIN ||
         token->numberValue > UCHAR_MAX) {
-        printf("Error on line %d: number out of range.\n", token->lineNumber);
+        printf("Error on line %d: number %d is out of range for a number literal.\n", token->lineNumber, token->numberValue);
         exit(ExitCodeNumberLiteralOutOutRange);
     }
 }
@@ -120,8 +120,8 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
                 printf("Error on line %d: invalid instruction \"%s\".\n", token->lineNumber, token->stringValue);
                 exit(ExitCodeInvalidInstruction);
             } else {
-                checkForMemoryViolation(state, token, state->address);
-                checkForMemoryViolation(state, token, state->address + 1);
+                assertNoMemoryViolation(state, token, state->address);
+                assertNoMemoryViolation(state, token, state->address + 1);
                 unsigned short opcode = (char)instruction << 13;
                 result->dataType[state->address] = DataTypeInstruction;
                 state->programMemoryWritten[state->address] = true;
@@ -151,6 +151,7 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
                         printf("Error on line %d: unexpected token following instruction name.\n", token->lineNumber);
                         exit(ExitCodeUnexpectedTokenAfterInstruction);
                 }
+                result->programMemory[state->address] = opcode;
                 result->programMemory[state->address + 1] = opcode >> 8;
                 state->address += 2;
             }
@@ -190,7 +191,7 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
                         case TokenTypeHexNumber:
                         case TokenTypeOctalNumber:
                         case TokenTypeBinaryNumber:
-                            validateNumberLiteralInRange(token);
+                            assertNumberLiteralInRange(token);
                             valueToFill = token->numberValue;
                             valueToFillType = DataTypeInt;
                             break;
@@ -223,7 +224,7 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
                             exit(ExitCodeUnexpectedTokenAfterFill);
                     }
                     for (int i = 0; i < fillCount; ++i) {
-                        checkForMemoryViolation(state, token, state->address);
+                        assertNoMemoryViolation(state, token, state->address);
                         result->programMemory[state->address] = valueToFill;
                         result->dataType[state->address] = valueToFillType;
                         state->programMemoryWritten[state->address++] = true;
@@ -239,8 +240,8 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
         case TokenTypeHexNumber:
         case TokenTypeOctalNumber:
         case TokenTypeBinaryNumber:
-            checkForMemoryViolation(state, token, state->address);
-            validateNumberLiteralInRange(token);
+            assertNoMemoryViolation(state, token, state->address);
+            assertNumberLiteralInRange(token);
             result->programMemory[state->address] = token->numberValue;
             result->dataType[state->address] = DataTypeInt;
             state->programMemoryWritten[state->address++] = true;
@@ -250,14 +251,14 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
         case TokenTypeNZTString:
             char* strptr = token->stringValue;
             while(*strptr != 0) {
-                checkForMemoryViolation(state, token, state->address);
+                assertNoMemoryViolation(state, token, state->address);
                 result->programMemory[state->address] = *strptr;
                 result->dataType[state->address] = DataTypeChar;
                 state->programMemoryWritten[state->address++] = true;
                 ++strptr;
             }
             if (token->type == TokenTypeZTString) {
-                checkForMemoryViolation(state, token, state->address);
+                assertNoMemoryViolation(state, token, state->address);
                 result->programMemory[state->address] = 0;
                 result->dataType[state->address] = DataTypeChar;
                 state->programMemoryWritten[state->address++] = true;
