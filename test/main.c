@@ -104,13 +104,13 @@ static void expectErrorCode(char* testName, int expectedErrorCode, struct TestRe
 
     if (returnCode != expectedErrorCode) {
         ++testResults->failed;
-        printf("[FAIL] %s - error code %d was expected, but code %d was produced.\n", testName, expectedErrorCode, returnCode);
+        printf("[FAIL] %s - code %d was expected, but code %d was produced.\n", testName, expectedErrorCode, returnCode);
         return;
     }
 
     if (fileExists(actualBinPath) || fileExists(actualCsvPath)) {
         ++testResults->failed;
-        printf("[FAIL] %s - the expected error code was produced, however output files were produced as well, when none were expected.\n", testName);
+        printf("[FAIL] %s - the expected code was produced, however output files were produced as well, when none were expected.\n", testName);
         return;
     }
 
@@ -146,6 +146,7 @@ int main(int argc, const char * argv[]) {
 
     expectErrorCode("assemble-empty-program", ExitCodeResultProgramEmpty, &testResults);
     expectSuccess("validate-basic-functionality", &testResults);
+    expectSuccess("label-name-should-allow-valid-length-and-characters", &testResults);
 
     printf("Tests passed: %d\nTests failed: %d\n", testResults.passed, testResults.failed);
 }

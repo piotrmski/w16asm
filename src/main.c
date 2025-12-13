@@ -28,7 +28,7 @@ int main(int argc, const char * argv[]) {
     int programSize = 0;
 
     for (int i = 0; i < ADDRESS_SPACE_SIZE; ++i) {
-        if (result.programMemory[i] != 0) {
+        if (result.dataType[i] != DataTypeNone) {
             programSize = i + 1;
         }
     }
