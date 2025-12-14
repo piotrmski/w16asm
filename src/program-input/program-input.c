@@ -40,7 +40,8 @@ struct ProgramInput getProgramInput(int argc, const char * argv[]) {
     }
 
     if (argc == 1 || helpFlag) {
-        printf("W16 assembler. Usage:\n");
+        printf("W16 assembler. Copyright (C) 2025 Piotr Marczyński. This program is licensed under GNU GPL v3. See file COPYING.\n");
+        printf("Usage:\n");
         printf("w16asm [path/to/assembly-source.asm] [path/to/binary-destination.bin] [path/to/symbols-destination.csv]\n");
         printf("Assembles the source file and saves the resulting binary file.\n");
         printf("Assembly source and binary destination paths are required.\n");

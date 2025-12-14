@@ -12,6 +12,7 @@ all: $(appName)
 
 $(appName): $(objects)
 	$(CC) $(CFLAGS) -o dist/$(appName) $(objects)
+	cp COPYING dist/COPYING
 
 $(testAppName): $(testObjects)
 	$(CC) $(CFLAGS) -o dist/$(testAppName) $(testObjects)

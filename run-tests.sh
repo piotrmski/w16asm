@@ -1,1 +1,1 @@
-make && make w16asm-test && ./dist/w16asm-test
+make && make w16asm-test && ./dist/w16asm-test && rm ./dist/w16asm-test
