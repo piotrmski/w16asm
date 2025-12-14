@@ -49,7 +49,7 @@ Instruction names are case-insensitive. All instructions have one argument - an 
 
 Directive names are also case-insensitive.
 
-Data declarations are not required to be preceded by any directive - a number literal, a character, or a string by themselves create data declarations.
+Data declarations are not required to be preceded by any directive - a number literal, a character, or a string by itself creates a data declaration.
 
 ## Instruction set
 
