@@ -150,7 +150,7 @@ static void expectErrorCode(char* testName, int expectedErrorCode) {
             printf(WARN " %s - code %d was expected, but code %d was produced.\n", testName, expectedErrorCode, returnCode);
         } else {
             ++testResults.failed;
-            printf(FAIL" %s - code %d was expected, but success code was produced.\n", testName, expectedErrorCode);
+            printf(FAIL " %s - code %d was expected, but success code was produced.\n", testName, expectedErrorCode);
         }
         return;
     }
