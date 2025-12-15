@@ -221,6 +221,8 @@ int main(int argc, const char * argv[]) {
     expectErrorCode("align-should-disallow-beyond-memory-range", ExitCodeOriginOutOfMemoryRange, &testResults);
     expectSuccess("align-should-allow-param-zero", &testResults);
     expectSuccess("align-should-allow-param-under-byte", &testResults);
+    expectSuccess("empty-string-should-produce-char-0", &testResults);
+    expectSuccess("empty-nzt-string-should-be-labeled-as-char", &testResults);
 
     printf("Tests passed: %d\nTests warned: %d\nTests failed: %d\n", testResults.passed, testResults.warned, testResults.failed);
 }

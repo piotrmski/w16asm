@@ -1,1 +1,1 @@
-.org 0x1234 helloWorld: ''
+.org 0x1234

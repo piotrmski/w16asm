@@ -291,6 +291,8 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
             break;
         case TokenTypeZTString:
         case TokenTypeNZTString:
+            assertNoMemoryViolation(state, token, state->address);
+            result->dataType[state->address] = DataTypeChar;
             char* strptr = token->stringValue;
             while(*strptr != 0) {
                 assertNoMemoryViolation(state, token, state->address);
