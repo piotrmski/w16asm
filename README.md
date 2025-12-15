@@ -65,7 +65,11 @@ Data declarations are not required to be preceded by any directive - a number li
 ## Directives
 
 - `.ORG` followed by a number between 0 and 8191 as an argument. Places the following data, instructions, or directives at a specified memory address.
-- `.ALIGN` followed by a number between 0 and 255 as an argument. Places the following data, instructions, or directives at the nearest (towards higher) address where the least significant byte is equal to the argument.
+- `.ALIGN` followed by a number between 1 and 12 as an argument. Places the following data, instructions, or directives at the nearest (towards higher) address where a number of least significat bits equal to the argument value are unset. Examples:
+    - current address is 0x0123, `.ALIGN 4` sets the next address to 0x0130,
+    - current address is 0x0120, `.ALIGN 4` sets the next address to 0x0120,
+    - current address is 0x0123, `.ALIGN 8` sets the next address to 0x0200,
+    - current address is 0x0100, `.ALIGN 8` sets the next address to 0x0100.
 - `.FILL` followed by two arguments:
     - value to be filled (a number between -128 and 255 or a character literal),
     - number of words to fill (a number greater than 0).

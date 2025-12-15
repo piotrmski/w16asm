@@ -148,7 +148,7 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
                     case TokenTypeOctalNumber:
                     case TokenTypeBinaryNumber:
                         if (token->numberValue < 0 || token->numberValue >= ADDRESS_SPACE_SIZE) {
-                            printf("Error on line %d: attempting to reference invalid address \"%d\".\n", token->lineNumber, token->numberValue);
+                            printf("Error on line %d: attempting to reference invalid address 0x%04X.\n", token->lineNumber, token->numberValue);
                             exit(ExitCodeReferenceToInvalidAddress);
                         }
                         opcode |= token->numberValue;
@@ -183,7 +183,7 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
                         case TokenTypeOctalNumber:
                         case TokenTypeBinaryNumber:
                             if (token->numberValue < 0 || token->numberValue >= ADDRESS_SPACE_SIZE) {
-                                printf("Error on line %d: attempting to set origin to invalid address \"%d\".\n", token->lineNumber, token->numberValue);
+                                printf("Error on line %d: attempting to set origin to invalid address 0x%04X.\n", token->lineNumber, token->numberValue);
                                 exit(ExitCodeOriginOutOfMemoryRange);
                             }
                             state->address = token->numberValue;
@@ -203,15 +203,16 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
                         case TokenTypeHexNumber:
                         case TokenTypeOctalNumber:
                         case TokenTypeBinaryNumber:
-                            if (token->numberValue < 0 || token->numberValue > UCHAR_MAX) {
-                                printf("Error on line %d: attempting to align to an invalid byte \"%d\".\n", token->lineNumber, token->numberValue);
+                            if (token->numberValue < 1 || token->numberValue > 12) {
+                                printf("Error on line %d: invalid align parameter \"%d\". Must be between 1 and 12.\n", token->lineNumber, token->numberValue);
                                 exit(ExitCodeInvalidAlignParameter);
                             }
-                            state->address = (state->address & 0xff) > token->numberValue
-                                ? (((state->address & 0xff00) + 0x100) | token->numberValue)
-                                : ((state->address & 0xff00) | token->numberValue);
+                            unsigned short bitsToReset = (1 << token->numberValue) - 1;
+                            state->address = (state->address & bitsToReset) == 0
+                                ? state->address
+                                : ((state->address & ~bitsToReset) + bitsToReset + 1);
                             if (state->address >= ADDRESS_SPACE_SIZE) {
-                                printf("Error on line %d: attempting to set origin via align to invalid address \"%d\".\n", token->lineNumber, token->numberValue);
+                                printf("Error on line %d: attempting to set origin via align to invalid address 0x%04X.\n", token->lineNumber, state->address);
                                 exit(ExitCodeOriginOutOfMemoryRange);
                             }
                             if (state->lastTokenWasLabelDefinition) {

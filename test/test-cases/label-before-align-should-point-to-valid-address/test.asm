@@ -1,2 +1,2 @@
 st test
-test: .align 10
+test: .align 5

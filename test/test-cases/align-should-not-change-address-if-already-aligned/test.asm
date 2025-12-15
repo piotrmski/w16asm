@@ -1,0 +1,1 @@
+'abcd' .align 2 'e'

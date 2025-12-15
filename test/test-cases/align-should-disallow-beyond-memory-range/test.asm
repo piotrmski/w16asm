@@ -1,1 +1,1 @@
-.org 0x1ff0 .align 0x20 'a'
+.org 0x1ff0 .align 0b1000 'a'

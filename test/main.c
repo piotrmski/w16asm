@@ -210,18 +210,19 @@ int main(int argc, const char * argv[]) {
     expectErrorCode("reference-should-disallow-negative-address", ExitCodeReferenceToInvalidAddress);
     expectErrorCode("string-should-disallow-unterminated", ExitCodeUnterminatedString);
     expectErrorCode("fill-should-disallow-multiple-characters", ExitCodeFillValueStringNotAChar);
-    expectErrorCode("fill-should-disallow-negative-count", ExitCodeFillCountNotPositive);
+    expectErrorCode("fill-should-disallow-non-positive-count", ExitCodeFillCountNotPositive);
     expectSuccess("label-before-align-should-point-to-valid-address");
     expectSuccess("label-before-fill-should-point-to-valid-address");
     expectSuccess("label-before-org-should-point-to-valid-address");
-    expectErrorCode("align-should-disallow-param-under-zero", ExitCodeInvalidAlignParameter);
-    expectErrorCode("align-should-disallow-param-over-byte", ExitCodeInvalidAlignParameter);
+    expectErrorCode("align-should-disallow-param-too-low", ExitCodeInvalidAlignParameter);
+    expectErrorCode("align-should-disallow-param-too-high", ExitCodeInvalidAlignParameter);
     expectErrorCode("align-should-disallow-beyond-memory-range", ExitCodeOriginOutOfMemoryRange);
-    expectSuccess("align-should-allow-param-zero");
-    expectSuccess("align-should-allow-param-under-byte");
+    expectSuccess("align-should-allow-param-lowest");
+    expectSuccess("align-should-allow-param-highest");
     expectSuccess("empty-string-should-produce-char-0");
     expectSuccess("empty-nzt-string-should-be-labeled-as-char");
     expectSuccess("label-at-higher-byte-of-instruction-should-be-int");
+    expectSuccess("align-should-not-change-address-if-already-aligned");
 
     printf("Tests passed: %d\nTests warned: %d\nTests failed: %d\n", testResults.passed, testResults.warned, testResults.failed);
 }
