@@ -128,6 +128,12 @@ static void parseToken(struct Token* token, struct AssemblerState* state, struct
             state->labelDefinitions[state->labelDefinitionsIndex].lineNumber = token->lineNumber;
             state->labelDefinitions[state->labelDefinitionsIndex++].address = state->address;
             state->lastTokenWasLabelDefinition = true;
+            for (int i = 0; i < state->labelDefinitionsIndex - 1; ++i) {
+                if (strcmp(state->labelDefinitions[i].name, token->stringValue) == 0) {
+                    printf("Error on line %d: label name \"%s\" is not unique.\n", token->lineNumber, token->stringValue);
+                    exit(ExitCodeLabelNameNotUnique);
+                }
+            }
             break;
         case TokenTypeLabelUseOrInstruction:
             enum Instruction instruction = getInstruction(token->stringValue);

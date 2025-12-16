@@ -41,7 +41,7 @@ The reference simulator at [https://github.com/piotrmski/w16sim](https://github.
 
 The syntax of this W16 assembly language is very relaxed and mostly newline-agnostic. A single line may contain multiple instructions and directives, or a single instruction or directive with its arguments may span multiple lines.
 
-Any number of labels may precede an instruction or a directive. A label name must be between 1 and 31 characters, which could be uppercase or lowercase letters, digits and underscores (the first character can’t be a digit). The label name must be followed by a colon `:`. Labels are case-sensitive.
+Any number of labels may precede an instruction or a directive. A label name must be between 1 and 31 characters, which could be uppercase or lowercase letters, digits and underscores (the first character can’t be a digit). The label name must be followed by a colon `:`. Label names are case-sensitive and must be unique.
 
 A comment starts with a semicolon `;` and ends with a newline character (CR or LF).
 

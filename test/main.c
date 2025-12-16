@@ -24,12 +24,10 @@
 #include "../common/exit-code.h"
 
 #define FAIL "\x1B[31m[FAIL]\x1B[0m"
-#define WARN "\x1B[33m[WARN]\x1B[0m"
 #define PASS "\x1B[32m[PASS]\x1B[0m"
 
 struct TestResults {
     int passed;
-    int warned;
     int failed;
 } testResults;
 
@@ -145,11 +143,10 @@ static void expectErrorCode(char* testName, int expectedErrorCode) {
     int returnCode = executeTestCase(testName);
 
     if (returnCode != expectedErrorCode) {
+        ++testResults.failed;
         if (returnCode != 0) {
-            ++testResults.warned;
-            printf(WARN " %s - code %d was expected, but code %d was produced.\n", testName, expectedErrorCode, returnCode);
+            printf(FAIL " %s - code %d was expected, but code %d was produced.\n", testName, expectedErrorCode, returnCode);
         } else {
-            ++testResults.failed;
             printf(FAIL " %s - code %d was expected, but success code was produced.\n", testName, expectedErrorCode);
         }
         return;
@@ -223,6 +220,7 @@ int main(int argc, const char * argv[]) {
     expectSuccess("empty-nzt-string-should-be-labeled-as-char");
     expectSuccess("label-at-higher-byte-of-instruction-should-be-int");
     expectSuccess("align-should-not-change-address-if-already-aligned");
+    expectErrorCode("labels-disallow-duplicates", ExitCodeLabelNameNotUnique);
 
-    printf("Tests passed: %d\nTests warned: %d\nTests failed: %d\n", testResults.passed, testResults.warned, testResults.failed);
+    printf("Tests passed: %d\nTests failed: %d\n", testResults.passed, testResults.failed);
 }
