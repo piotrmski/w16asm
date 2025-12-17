@@ -40,7 +40,7 @@ Eight instructions are available, exclusively in absolute addressing mode. All i
 
 The reference simulator at [https://github.com/piotrmski/w16sim](https://github.com/piotrmski/w16sim) supports the following memory map:
 
-- 0x0000-0x1FFD - program memory,
+- 0x0000-0x1FFA - program memory,
 - 0x1FFB-0x1FFE - 32-bit relative time - reading from these addresses yields a number of milliseconds since the simulator has started until the last (or current) time 0x1FFB was (or is) read,
 - 0x1FFF - terminal I/O:
     - Loading from 0x1FFF removes a character from the standard input buffer and yields it, or 0 if the buffer is empty,
