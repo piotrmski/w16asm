@@ -28,7 +28,8 @@ W16 is an imaginary microarchitecture and ISA designed with extreme minimalism i
 
 The word size is 8 bits. 2<sup>13</sup> memory addresses are addressable. Byte order is little-endian.
 
-Two registers exist in this architecture:
+Two registers exist in this architecture, both are initialized to 0:
+
 - program counter "PC" containing the address of the currently executed instruction (13 bits),
 - general purpose register "A" (8 bits).
 
@@ -45,11 +46,13 @@ The reference simulator at [https://github.com/piotrmski/w16sim](https://github.
     - Loading from 0x1FFF removes a character from the standard input buffer and yields it, or 0 if the buffer is empty,
     - Storing to 0x1FFF pushes a character to the standard output buffer.
 
+The entry point is 0x0000.
+
 ## Syntax
 
 The syntax of this W16 assembly language is very relaxed and mostly newline-agnostic. A single line may contain multiple instructions and directives, or a single instruction or directive with its arguments may span multiple lines.
 
-Any number of labels may precede an instruction or a directive. A label name must be between 1 and 31 characters, which could be uppercase or lowercase letters, digits and underscores (the first character can’t be a digit). The label name must be followed by a colon `:`. Label names are case-sensitive and must be unique.
+Any number of labels may precede an instruction or a directive. A label name must be between 1 and 31 characters, which could be uppercase or lowercase letters, digits and underscores (the first character can't be a digit). The label name must be followed by a colon `:`. Label names are case-sensitive and must be unique.
 
 A comment starts with a semicolon `;` and ends with a newline character (CR or LF).
 
@@ -85,7 +88,7 @@ Data declarations are not required to be preceded by any directive - a number li
 ## Data types
 
 - Numbers, which may be expressed in the following representations:
-    - decimal `/^(0|\-?[1-9][0-9]*)$/` (negative numbers are expressed in 2’s complement),
+    - decimal `/^(0|\-?[1-9][0-9]*)$/` (negative numbers are represented in two's complement),
     - hexadecimal `/^0x[0-9A-F]+$/` (case-insensitive),
     - binary `/^0b[0-1]+$/` (case-insensitive),
     - octal `/^0[0-7]+$/`,
