@@ -132,6 +132,11 @@ static int executeTestCase(char* testName) {
     return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
+static int executeExamplesTestCase() {
+    int status = system("./assemble-examples.sh");
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+}
+
 static void expectErrorCode(char* testName, int expectedErrorCode) {
     char actualBinPath[1024];
     char actualCsvPath[1024];
@@ -185,9 +190,20 @@ static void expectSuccess(char* testName) {
     printf(PASS " %s\n", testName);
 }
 
+static void expectSuccessAssembleExamples() {
+    int examplesReturnCode = executeExamplesTestCase();
+    if (examplesReturnCode == 0) {
+        ++testResults.passed;
+        printf(PASS " assemble-examples\n");
+    } else {
+        ++testResults.failed;
+        printf(FAIL " assemble-examples - success code was expected, but code %d was produced.\n", examplesReturnCode);
+    }
+}
+
 int main(int argc, const char * argv[]) {
+    expectSuccessAssembleExamples();
     expectErrorCode("empty-program-should-fail", ExitCodeResultProgramEmpty);
-    expectSuccess("validate-basic-functionality");
     expectSuccess("label-name-should-allow-valid-length-and-characters");
     expectErrorCode("label-name-should-disallow-invalid-length", ExitCodeLabelNameTooLong);
     expectErrorCode("label-name-should-disallow-invalid-character", ExitCodeUnexpectedCharacter);
