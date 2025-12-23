@@ -212,7 +212,6 @@ int main(int argc, const char * argv[]) {
     expectSuccess("instruction-should-allow-near-memory-range");
     expectErrorCode("instruction-should-disallow-beyond-memory-range", ExitCodeDeclaringValueOutOfMemoryRange);
     expectErrorCode("memory-overwrite-should-fail", ExitCodeMemoryValueOverridden);
-    expectErrorCode("number-literals-binary-should-disallow-no-digits", ExitCodeNumberWithoutDigits);
     expectErrorCode("number-literals-hex-should-disallow-no-digits", ExitCodeNumberWithoutDigits);
     expectSuccess("number-literals-should-allow-in-range");
     expectErrorCode("number-literals-should-disallow-too-high", ExitCodeNumberLiteralOutOutRange);

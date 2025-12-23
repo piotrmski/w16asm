@@ -50,19 +50,26 @@ The entry point is 0x0000.
 
 ## Syntax
 
-The syntax of this W16 assembly language is very relaxed and mostly newline-agnostic. A single line may contain multiple instructions and directives, or a single instruction or directive with its arguments may span multiple lines.
+W16 assembly code consists of one or more **statements**. A **statement** consists of zero or more **label definitions**, followed by:
+- an **instruction** name and an argument,
+- a **directive** name and arguments, or
+- **data declaration**.
 
-Any number of labels may precede an instruction or a directive. A label name must be between 1 and 31 characters, which could be uppercase or lowercase letters, digits and underscores (the first character can't be a digit). The label name must be followed by a colon `:`. Label names are case-sensitive and must be unique.
+Whitespace must separate statements, arguments, and instruction or directive names from their arguments. Whitespace includes newline characters, therefore a single statement may span multiple lines of assembly code.
 
-A comment starts with a semicolon `;` and ends with a newline character (CR or LF).
+Any line of assembly code may end with a **comment** starting with a semicolon `;`.
 
-Instruction names are case-insensitive. All instructions have one argument - an absolute memory address - which may be expressed as a label name or a number between 0 and 8191 in any representation.
+## Labels
 
-Directive names are also case-insensitive.
+A label definition consists of a label name followed by a colon `:`. A label name must be between 1 and 31 characters, which can be uppercase or lowercase letters, digits and underscores (the first character can't be a digit). Label names are case-sensitive and must be unique.
 
-Data declarations are not required to be preceded by any directive - a number literal, a character, or a string by itself creates a data declaration.
+When using a label name as an argument to an instruction or `.LSB` or `.MSB` directive, it can optionally be suffixed by a plus or minus sign followed by a number. For example if `foo` is a label that evaluates to `0x0123`, then `foo+1` evaluates to `0x0124`, and `foo-2` evaluates to `0x0121`.
 
-## Instruction set
+## Instructions
+
+Instruction names are case-insensitive. All instructions have one argument - an absolute memory address - which may be expressed as a number between 0 and 8191 in any representation (see Data declaration), or a label name, optionally with an offset.
+
+Instruction set:
 
 - `LD X` - loads value from memory address X to the register A,
 - `NOT X` - loads bitwise complement of the value from memory address X to the register A,
@@ -75,27 +82,29 @@ Data declarations are not required to be preceded by any directive - a number li
 
 ## Directives
 
-- `.ORG` followed by a number between 0 and 8191 as an argument. Places the following data, instructions, or directives at a specified memory address.
-- `.ALIGN` followed by a number between 1 and 12 as an argument. Places the following data, instructions, or directives at the nearest (towards higher) address where a number of least significant bits equal to the argument value are unset. Examples:
+Directive names are case-insensitive.
+
+- `.ORG` followed by a number between 0 and 8191 as an argument. Places the following statements at a specified memory address.
+- `.ALIGN` followed by a number between 1 and 12 as an argument. Places the following statements at the nearest (towards higher) address where a number of least significant bits equal to the argument value are unset. Examples:
     - current address is 0x0123, `.ALIGN 4` sets the next address to 0x0130,
     - current address is 0x0120, `.ALIGN 4` sets the next address to 0x0120,
     - current address is 0x0123, `.ALIGN 8` sets the next address to 0x0200,
     - current address is 0x0100, `.ALIGN 8` sets the next address to 0x0100.
 - `.FILL` followed by two arguments:
-    - value to be filled (a number between -128 and 255 or a character literal),
+    - value to be filled (a number between -128 and 255 or a character literal, see Data declaration),
     - number of words to fill (a number greater than 0).
+- `.LSB` followed by a label name, optionally with an offset. Places in memory the least significant byte of an address that a label evaluates to.
+- `.MSB` followed by a label name, optionally with an offset. Places in memory the most significant byte of an address that a label evaluates to.
 
-## Data types
+## Data declaration
 
-- Numbers, which may be expressed in the following representations:
-    - decimal `/^(0|\-?[1-9][0-9]*)$/` (negative numbers are represented in two's complement),
-    - hexadecimal `/^0x[0-9A-F]+$/` (case-insensitive),
-    - binary `/^0b[0-1]+$/` (case-insensitive),
-    - octal `/^0[0-7]+$/`,
-- Single characters or non-zero-terminated strings in single quotes `'`,
-- Zero-terminated strings in double quotes `"`.
+Stating a number between -128 and 255 or a character literal constitutes a declaration of one byte of data. Stating a string of characters constitutes a declaration of multiple bytes of data followed by 0.
 
-Numbers in data declarations are limited to 8 bits.
+A number may be represented in base 10, or in base 16 if prefixed by `0x`, or in base 8 if prefixed by `0`. Negative numbers are represented in two's complement.
+
+A character literal must be enclosed in single quotes `'`. It may be prefixed by `-`, in which case two's complement of a character value is placed in memory. It may also be suffixed by `+` or `-` followed by a number, in which case the number is added to or subtracted from the value of a character, or its two's complement. For example `-'z'-1` evaluates to -123.
+
+A zero-terminated string of characters must be enclosed in double quotes `"`.
 
 The following escape sequences can be used in strings and characters (they are case-insensitive):
 
