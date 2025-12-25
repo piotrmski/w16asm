@@ -359,7 +359,7 @@ struct AssemblerResult assemble(FILE* filePtr) {
     int lineNumber = 1;
     struct Token token;
     while ((token = getToken(&fileContents, &lineNumber)).value != NULL) {
-        printf("%d: %s\n", token.lineNumber, token.value);
+        printf("%d: %s (%d)\n", token.lineNumber, token.value, token.length);
     }
 
 }

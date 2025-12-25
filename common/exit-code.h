@@ -28,6 +28,7 @@ enum ExitCode {
     ExitCodeFillCountNotPositive,
     ExitCodeInvalidDirective,
     ExitCodeInvalidToken,
+    ExitCodeInvalidCharacter,
     ExitCodeUndefinedLabel,
     ExitCodeUnexpectedLabelAtEndOfFile
 };

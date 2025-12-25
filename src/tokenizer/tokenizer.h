@@ -8,6 +8,7 @@
 
 struct Token {
     int lineNumber;
+    int length;
     char* value;
 };
 
