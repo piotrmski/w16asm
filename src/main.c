@@ -29,7 +29,7 @@
 int main(int argc, const char * argv[]) {
     struct ProgramInput input = getProgramInput(argc, argv);
 
-    FILE* asmFile = fopen(input.asmFilePath, "rb");
+    FILE* asmFile = fopen(input.asmFilePath, "r");
 
     if (asmFile == NULL) {
         printf("Error: could not read file \"%s\".\n", input.asmFilePath);

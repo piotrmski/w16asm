@@ -55,7 +55,7 @@ W16 assembly code consists of one or more **statements**. A **statement** consis
 - a **directive** name and arguments, or
 - **data declaration**.
 
-Whitespace must separate statements, arguments, and instruction or directive names from their arguments. Whitespace includes newline characters, therefore a single statement may span multiple lines of assembly code.
+Whitespace must separate statements and all parts of a statement. Whitespace includes newline characters, therefore a single statement may span multiple lines of assembly code.
 
 Any line of assembly code may end with a **comment** starting with a semicolon `;`.
 

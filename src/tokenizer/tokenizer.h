@@ -4,35 +4,20 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define MAX_NAME_LEN_INCL_0 0x20
-#define MAX_STR_VAL_LEN_INCL_0 0x2000  
-
-enum TokenType {
-    TokenTypeNone,
-    TokenTypeLabelDefinition,
-    TokenTypeLabelUseOrInstruction,
-    TokenTypeDirective,
-    TokenTypeDecimalNumber,
-    TokenTypeHexNumber,
-    TokenTypeOctalNumber,
-    TokenTypeBinaryNumber,
-    TokenTypeZTString,
-    TokenTypeNZTString,
-    _TokenTypeComment,
-    _TokenTypeMinus,
-    _TokenTypeZero
-};
+#define MAX_LABEL_NAME_LEN_INCL_0 0x20
 
 struct Token {
     int lineNumber;
-    enum TokenType type;
-    int numberValue;
-    char* stringValue;
+    char* value;
 };
 
-struct Token getInitialTokenState();
-
-void getToken(struct Token* token, FILE* filePtr);
-
+/**
+ * Returned structure field value points to the first token in the string
+ * pointed to by `*string`, or NULL if there isn't any token in the string.
+ * Replaces the first non-token character of the string with 0.
+ * Updates `*string` to point to the first character after the 0.
+ * Increments `*lineNumber` by the number of LF characters encountered.
+ */
+struct Token getToken(char** string, int* lineNumber);
 
 #endif
