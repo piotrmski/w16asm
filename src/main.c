@@ -26,6 +26,20 @@
 
 #define IO_INTERFACE_ADDRESS 0x1fff
 
+static char* getFileContents(FILE* filePtr) {
+    fseek(filePtr, 0, SEEK_END);
+    int fileSize = ftell(filePtr);
+    rewind(filePtr);
+    char* fileContents = malloc(fileSize + 1);
+    char ch;
+    int i = 0;
+    while ((ch = getc(filePtr)) != EOF) {
+        fileContents[i++] = ch;
+    }
+    fileContents[i] = 0;
+    return fileContents;
+}
+
 int main(int argc, const char * argv[]) {
     struct ProgramInput input = getProgramInput(argc, argv);
 
@@ -36,9 +50,11 @@ int main(int argc, const char * argv[]) {
         exit(ExitCodeCouldNotReadAsmFile);
     }
 
-    struct AssemblerResult result = assemble(asmFile);
+    char* asmFileContents = getFileContents(asmFile);
 
     fclose(asmFile);
+
+    struct AssemblerResult result = assemble(asmFileContents);
 
     int programSize = 0;
 

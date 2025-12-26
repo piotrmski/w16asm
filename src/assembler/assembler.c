@@ -7,7 +7,9 @@
 #include <limits.h>
 #include "../../common/exit-code.h"
 
-#define MAX_LABELS 0x800
+#define MAX_LABEL_DEFS 0x800
+#define MAX_LABEL_USES 0x2000
+#define MAX_LABEL_NAME_LEN_INCL_0 0x20
 
 enum Instruction {
     InstructionLd = 0,
@@ -30,33 +32,40 @@ enum Directive {
     DirectiveInvalid
 };
 
-struct LabelInfo {
+struct LabelDefinition {
     char* name;
     int lineNumber;
     int address;
 };
 
-// struct AssemblerState {
-//     int address;
-//     bool programMemoryWritten[ADDRESS_SPACE_SIZE];
-//     bool lastTokenWasLabelDefinition;
-//     struct LabelInfo labelDefinitions[MAX_LABELS];
-//     int labelDefinitionsIndex;
-//     struct LabelInfo labelUses[MAX_LABELS];
-//     int labelUsesIndex;
-// };
+struct LabelUse {
+    char* name;
+    int offset;
+    int byte;
+    int lineNumber;
+    int address;
+};
 
-// static void assertNoMemoryViolation(struct AssemblerState* state, struct Token* token, int address) {
-//     if (address >= ADDRESS_SPACE_SIZE) {
-//         printf("Error on line %d: attempting to declare memory value outside of address space.\n", token->lineNumber);
-//         exit(ExitCodeDeclaringValueOutOfMemoryRange);
-//     }
+struct AssemblerState {
+    int currentAddress;
+    bool programMemoryWritten[ADDRESS_SPACE_SIZE];
+    struct LabelDefinition labelDefinitions[MAX_LABEL_DEFS];
+    int labelDefinitionsCount;
+    struct LabelUse labelUses[MAX_LABEL_USES];
+    int labelUsesCount;
+};
 
-//     if (state->programMemoryWritten[address]) {
-//         printf("Error on line %d: attempting to override memory value.\n", token->lineNumber);
-//         exit(ExitCodeMemoryValueOverridden);
-//     }
-// }
+static void assertNoMemoryViolation(struct AssemblerState* state, int address, int lineNumber) {
+    if (address >= ADDRESS_SPACE_SIZE) {
+        printf("Error on line %d: attempting to declare memory value outside of address space.\n", lineNumber);
+        exit(ExitCodeDeclaringValueOutOfMemoryRange);
+    }
+
+    if (state->programMemoryWritten[address]) {
+        printf("Error on line %d: attempting to override memory value.\n", lineNumber);
+        exit(ExitCodeMemoryValueOverridden);
+    }
+}
 
 // static void assertNumberLiteralInRange(struct Token* token) {
 //     if (token->numberValue < CHAR_MIN ||
@@ -339,27 +348,84 @@ static enum Directive getDirective(char* name) {
 //     exit(ExitCodeUndefinedLabel);
 // }
 
-static char* getFileContents(FILE* filePtr) {
-    fseek(filePtr, 0, SEEK_END);
-    int fileSize = ftell(filePtr);
-    rewind(filePtr);
-    char* fileContents = malloc(fileSize + 1);
-    char ch;
-    int i = 0;
-    while ((ch = getc(filePtr)) != EOF) {
-        fileContents[i++] = ch;
+static bool isValidLabelDefinitionRemoveColon(struct Token token, struct AssemblerState* state) {
+    if (token.value[--token.length] != ':') {
+        return false;
     }
-    fileContents[i] = 0;
-    return fileContents;
+
+    token.value[token.length] = 0; // Trim the trailing colon character
+
+    if (token.length > MAX_LABEL_NAME_LEN_INCL_0 - 1) {
+        printf("Error on line %d: label name too long.\n", token.lineNumber);
+        exit(ExitCodeLabelNameTooLong);
+    }
+
+    for (int i = 0; i < token.length; ++i) {
+        char ch = token.value[i];
+        bool characterValid = ch == '_' || ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || i > 0 && ch >= '0' && ch <= 9;
+        if (!characterValid) {
+            printf("Error on line %d: \"%s\" is not a valid label name.\n", token.lineNumber, token.value);
+            exit(ExitCodeInvalidLabelName);
+        }
+    }
+
+    for (int i = 0; i < state->labelDefinitionsCount; ++i) {
+        if (strcmp(state->labelDefinitions[i].name, token.value) == 0) {
+            printf("Error on line %d: label name \"%s\" is not unique.\n", token.lineNumber, token.value);
+            exit(ExitCodeLabelNameNotUnique);
+        }
+    }
+
+    return true;
 }
 
-struct AssemblerResult assemble(FILE* filePtr) {
-    char* fileContents = getFileContents(filePtr);
-
-    int lineNumber = 1;
+static struct Token parseLabelDefinitionsGetNextToken(struct AssemblerState* state, char** source, int* lineNumber) {
     struct Token token;
-    while ((token = getToken(&fileContents, &lineNumber)).value != NULL) {
-        printf("%d: %s (%d)\n", token.lineNumber, token.value, token.length);
+
+    while (true) {
+        token = getToken(source, lineNumber);
+        if (isValidLabelDefinitionRemoveColon(token, state)) {
+            if (state->labelDefinitionsCount == MAX_LABEL_DEFS - 1) {
+                printf("Error on line %d: too many label definitions.\n", token.lineNumber);
+                exit(ExitCodeTooManyLabelDefinitions);
+            }
+            state->labelDefinitions[state->labelDefinitionsCount++] = (struct LabelDefinition) { token.value, token.lineNumber, state->currentAddress };
+        } else {
+            break;
+        }
     }
 
+    return token;
+}
+
+/// Returns true if statement parsing should continue
+static bool parseStatement(struct AssemblerState* state, char** source, int* lineNumber) {
+    int labelDefinitionsStartIndex = state->labelDefinitionsCount;
+    struct Token firstTokenAfterLabels = parseLabelDefinitionsGetNextToken(state, source, lineNumber);
+
+    if (firstTokenAfterLabels.value == NULL) {
+        if (state->labelDefinitionsCount > labelDefinitionsStartIndex) {
+            printf("Error on line %d: unexpected label definition at the end of the file.\n", *lineNumber);
+            exit(ExitCodeUnexpectedLabelAtEndOfFile);
+        }
+
+        return false;
+    }
+
+    enum Instruction instruction;
+
+    if ((instruction = getInstruction(firstTokenAfterLabels.value)) != InstructionInvalid) {
+        // TODO
+    } // TODO else if is directive, else if is number declaration, else if is character declaration, else if is string declaration, else error
+}
+
+struct AssemblerResult assemble(char* source) {
+    int lineNumber = 1;
+    struct AssemblerState state = { 0, { false }, { 0 }, 0, { 0 }, 0 };
+
+    while (parseStatement(&state, &source, &lineNumber)) {}
+
+    struct AssemblerResult result = { { 0 }, { DataTypeNone }, { NULL } };
+
+    return result;
 }

@@ -18,6 +18,6 @@ struct AssemblerResult {
     char* labelNameByAddress[ADDRESS_SPACE_SIZE];
 };
 
-struct AssemblerResult assemble(FILE* filePtr);
+struct AssemblerResult assemble(char* source);
 
 #endif

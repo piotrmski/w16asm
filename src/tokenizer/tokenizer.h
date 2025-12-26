@@ -4,8 +4,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define MAX_LABEL_NAME_LEN_INCL_0 0x20
-
 struct Token {
     int lineNumber;
     int length;
