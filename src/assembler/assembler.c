@@ -251,6 +251,40 @@ static struct EscapeSequenceParseResult parseEscapeSequence(struct Token token) 
     }
 }
 
+static char parseCharacterLiteral(struct Token token) {
+    char* fullTokenValue = token.value;
+
+    bool isNegative = token.value[0] == '-';
+
+    if (isNegative) {
+        ++token.value;
+    }
+
+    int charLength = 1;
+    int character = (isNegative ? -1 : 1) * token.value[1];
+    if (character == '\\') {
+        struct EscapeSequenceParseResult parsed = parseEscapeSequence((struct Token) { token.lineNumber, 0, token.value + 1 });
+        character = parsed.character;
+        charLength = parsed.length;
+    }
+
+    if (token.value[0] != '\''
+        || token.value[charLength + 1] != '\''
+        || !(token.value[charLength + 2] == '+'
+            || token.value[charLength + 2] == '-'
+            || token.value[charLength + 2] == 0)) {
+        printf("Error on line %d: \"%s\" is not a valid character literal.\n", token.lineNumber, fullTokenValue);
+        exit(ExitCodeInvalidCharacterLiteral);
+    }
+
+    if (token.value[charLength + 2] == 0) {
+        return character;
+    }
+
+    int offset = parseNumberLiteral((struct Token) { token.lineNumber, 0, token.value + charLength + 2 });
+    return character + offset;
+ }
+
 static void insertInstruction(struct AssemblerState* state, enum Instruction instruction) {
     assertNoMemoryViolation(state, state->currentAddress, state->lineNumber);
     assertNoMemoryViolation(state, state->currentAddress + 1, state->lineNumber);
@@ -311,7 +345,15 @@ static void declareNumber(struct AssemblerState* state, struct Token token) {
 }
 
 static void declareCharacter(struct AssemblerState* state, struct Token token) {
-    // TODO
+    assertNoMemoryViolation(state, state->currentAddress, state->lineNumber);
+    state->programMemoryWritten[state->currentAddress] = true;
+    state->result.dataType[state->currentAddress] = DataTypeChar;
+    int number = parseCharacterLiteral(token);
+    if (number < CHAR_MIN || number > UCHAR_MAX) {
+        printf("Error on line %d: character literal \"%s\" evaluates to %d, which is out of range.\n", token.lineNumber, token.value, number);
+        exit(ExitCodeCharacterLiteralOutOutRange);
+    }
+    state->result.programMemory[state->currentAddress++] = number;
 }
 
 static struct Token parseLabelDefinitionsGetNextToken(struct AssemblerState* state) {

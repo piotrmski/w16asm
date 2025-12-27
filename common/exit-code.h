@@ -10,7 +10,6 @@ enum ExitCode {
     ExitCodeProgramArgumentsInvalid,
     ExitCodeNumberLiteralOutOutRange,
     ExitCodeCharacterLiteralOutOutRange,
-    ExitCodeUnexpectedCharacter,
     ExitCodeLabelNameTooLong,
     ExitCodeInvalidLabelName,
     ExitCodeLabelNameNotUnique,
@@ -29,7 +28,7 @@ enum ExitCode {
     ExitCodeFillCountNotPositive,
     ExitCodeInvalidDirective,
     ExitCodeInvalidToken,
-    ExitCodeInvalidCharacter,
+    ExitCodeInvalidCharacterLiteral,
     ExitCodeUndefinedLabel,
     ExitCodeUnexpectedLabelAtEndOfFile
 };
