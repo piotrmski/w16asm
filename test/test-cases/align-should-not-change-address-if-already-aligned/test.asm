@@ -1,1 +1,1 @@
-'abcd' .align 2 'e'
+'a' 'b' 'c' 'd' .align 2 'e'

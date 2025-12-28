@@ -139,7 +139,7 @@ static enum Directive getDirective(char* name) {
 }
 
 static bool isStringLiteral(char* tokenValue) {
-    return tokenValue[0] = '"';
+    return tokenValue[0] == '"';
 }
 
 static bool isNumberLiteral(char* tokenValue) {
@@ -421,16 +421,19 @@ static void applyDirective(struct AssemblerState* state, enum Directive directiv
 
 static void declareString(struct AssemblerState* state, struct Token token) {
     for (int i = 1; i < token.length - 1; ++i) {
-        assertNoMemoryViolation(state, state->currentAddress, state->lineNumber);
+        assertNoMemoryViolation(state, state->currentAddress, token.lineNumber);
         state->result.dataType[state->currentAddress] = DataTypeChar;
         if (token.value[i] == '\\') {
             struct EscapeSequenceParseResult parsed = parseEscapeSequence((struct Token) { token.length, 0, token.value + i });
-            state->result.programMemory[state->currentAddress] = parsed.character;
-            state->currentAddress += parsed.length;
+            state->result.programMemory[state->currentAddress++] = parsed.character;
+            i += parsed.length - 1;
         } else {
             state->result.programMemory[state->currentAddress++] = token.value[i];
         }
     }
+    assertNoMemoryViolation(state, state->currentAddress, token.lineNumber);
+    state->result.dataType[state->currentAddress] = DataTypeChar;
+    state->result.programMemory[state->currentAddress++] = 0;
 }
 
 static void declareNumber(struct AssemblerState* state, struct Token token) {
@@ -510,6 +513,10 @@ static bool parseStatement(struct AssemblerState* state) {
 }
 
 static void resolveLabels(struct AssemblerState* state) {
+    for (int i = state->labelDefinitionsCount - 1; i >= 0; --i) {
+        state->result.labelNameByAddress[state->labelDefinitions[i].address] = state->labelDefinitions[i].name;
+    }
+
     for (int i = 0; i < state->labelUsesCount; ++i) {
         struct LabelUse* labelUse = &state->labelUses[i];
         struct LabelDefinition* labelDefinition = findLabelDefinition(state, labelUse);
@@ -520,7 +527,7 @@ static void resolveLabels(struct AssemblerState* state) {
             exit(ExitCodeReferenceToInvalidAddress);
         }
         
-        state->result.programMemory[labelUse->address] = evaluatedAddress >> (labelUse->address * 8);
+        state->result.programMemory[labelUse->address] = evaluatedAddress >> (labelUse->byte * 8);
     }
 }
 
