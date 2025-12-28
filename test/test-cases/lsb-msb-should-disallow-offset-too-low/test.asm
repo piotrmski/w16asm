@@ -1,0 +1,3 @@
+.lsb foo+0x1edd
+.msb foo+0x1edd
+foo: .org 0x123

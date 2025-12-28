@@ -263,7 +263,7 @@ static struct EscapeSequenceParseResult parseEscapeSequence(struct Token token) 
     }
 }
 
-static char parseCharacterLiteral(struct Token token) {
+static int parseCharacterLiteral(struct Token token) {
     char* fullTokenValue = token.value;
 
     bool isNegative = token.value[0] == '-';
@@ -408,7 +408,7 @@ static void applyLsbOrMsbDirective(struct AssemblerState* state, enum Directive 
         exit(ExitCodeTooManyLabelUses);
     }
     state->labelUses[state->labelUsesCount++] =
-        (struct LabelUse) { labelUse.name, labelUse.offset, byte, param.lineNumber, state->currentAddress };
+        (struct LabelUse) { labelUse.name, labelUse.offset, byte, param.lineNumber, state->currentAddress++ };
 }
 
 static void applyDirective(struct AssemblerState* state, enum Directive directive, int labelDefinitionsStartIndex) {

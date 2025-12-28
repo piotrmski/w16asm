@@ -234,7 +234,13 @@ int main(int argc, const char * argv[]) {
     expectSuccess("empty-string-should-produce-char-0");
     expectSuccess("label-at-higher-byte-of-instruction-should-be-int");
     expectSuccess("align-should-not-change-address-if-already-aligned");
-    expectErrorCode("labels-disallow-duplicates", ExitCodeLabelNameNotUnique);
+    expectErrorCode("labels-should-disallow-duplicates", ExitCodeLabelNameNotUnique);
+    expectSuccess("character-expressions-should-allow-modifiers-within-range");
+    expectErrorCode("character-expressions-should-disallow-modifiers-too-low", ExitCodeCharacterLiteralOutOutRange);
+    expectErrorCode("character-expressions-should-disallow-modifiers-too-high", ExitCodeCharacterLiteralOutOutRange);
+    expectSuccess("lsb-msb-should-allow-offset-within-range");
+    expectErrorCode("lsb-msb-should-disallow-offset-too-low", ExitCodeReferenceToInvalidAddress);
+    expectErrorCode("lsb-msb-should-disallow-offset-too-high", ExitCodeReferenceToInvalidAddress);
 
     printf("Tests passed: %d\nTests failed: %d\n", testResults.passed, testResults.failed);
 }
