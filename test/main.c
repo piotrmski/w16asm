@@ -1,5 +1,5 @@
 /*
-    W16ASM-test Copyright (C) 2025 Piotr Marczyński <piotrmski@gmail.com>
+    W13ASM-test Copyright (C) 2025 Piotr Marczyński <piotrmski@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -127,7 +127,7 @@ static bool filesIdentical(char* testName, char* fileExtension, enum FileType fi
 
 static int executeTestCase(char* testName) {
     char syscall[4096];
-    sprintf(syscall, "./dist/w16asm test/test-cases/%s/test.asm test/test-cases/%s/actual.bin test/test-cases/%s/actual.csv", testName, testName, testName);
+    sprintf(syscall, "./dist/w13asm test/test-cases/%s/test.asm test/test-cases/%s/actual.bin test/test-cases/%s/actual.csv", testName, testName, testName);
     int status = system(syscall);
     return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }

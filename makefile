@@ -1,5 +1,5 @@
-appName := w16asm
-testAppName := w16asm-test
+appName := w13asm
+testAppName := w13asm-test
 CFLAGS  := -std=c23
 
 srcFiles := $(shell find src -name "*.c")

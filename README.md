@@ -1,12 +1,12 @@
-# W16 assembler
+# W13 assembler
 
-This program is used to process assembly source files into a binary format, which can later be loaded into the memory of a W16 simulator.
+This program is used to process assembly source files into a binary format, which can later be loaded into the memory of a W13 simulator.
 
 ## Usage
 
-Run `w16asm path/to/source.asm path/to/result.bin` to assemble the `source.asm` assembly file and save the resulting binary to `result.bin`.
+Run `w13asm path/to/source.asm path/to/result.bin` to assemble the `source.asm` assembly file and save the resulting binary to `result.bin`.
 
-Run `w16asm path/to/source.asm path/to/result.bin path/to/symbols.csv` to do the same as before, and additionally produce a `symbols.csv` comma-separated file containing descriptions of memory addresses:
+Run `w13asm path/to/source.asm path/to/result.bin path/to/symbols.csv` to do the same as before, and additionally produce a `symbols.csv` comma-separated file containing descriptions of memory addresses:
 
 - the first column is the memory address in hexadecimal format,
 - the second column is `int`, `char` or `instruction`,
@@ -16,15 +16,15 @@ Run `w16asm path/to/source.asm path/to/result.bin path/to/symbols.csv` to do the
 
 A C compiler supporting the C23 standard, aliased as `CC` (such as `GCC` or `Clang`) and `make` are required to build this assembler from source.
 
-Run `make` to build the assembler. The `w16asm` executable will be produced in the `dist` directory.
+Run `make` to build the assembler. The `w13asm` executable will be produced in the `dist` directory.
 
 ## Testing
 
 Run `run-tests.sh` to build and run the test suite.
 
-# W16 assembly language
+# W13 assembly language
 
-W16 is an imaginary microarchitecture and ISA designed with extreme minimalism in mind. Full details can be found at [https://github.com/piotrmski/w16sim](https://github.com/piotrmski/w16sim).
+W13 is an imaginary microarchitecture and ISA designed with extreme minimalism in mind. Full details can be found at [https://github.com/piotrmski/w13sim](https://github.com/piotrmski/w13sim).
 
 The word size is 8 bits. 2<sup>13</sup> memory addresses are addressable. Byte order is little-endian.
 
@@ -38,7 +38,7 @@ Eight instructions are available, exclusively in absolute addressing mode. All i
 - the 3 most significant bits are the opcode,
 - the other 13 bits are the absolute memory address.
 
-The reference simulator at [https://github.com/piotrmski/w16sim](https://github.com/piotrmski/w16sim) supports the following memory map:
+The reference simulator at [https://github.com/piotrmski/w13sim](https://github.com/piotrmski/w13sim) supports the following memory map:
 
 - 0x0000-0x1FFA - program memory,
 - 0x1FFB-0x1FFE - 32-bit relative time - reading from these addresses yields a number of milliseconds since the simulator has started until the last (or current) time 0x1FFB was (or is) read,
@@ -50,7 +50,7 @@ The entry point is 0x0000.
 
 ## Syntax
 
-W16 assembly code consists of one or more **statements**. A **statement** consists of zero or more **label definitions**, followed by:
+W13 assembly code consists of one or more **statements**. A **statement** consists of zero or more **label definitions**, followed by:
 - an **instruction** name and an argument,
 - a **directive** name and arguments, or
 - **data declaration**.
