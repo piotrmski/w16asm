@@ -18,6 +18,6 @@ struct AssemblerResult {
     char* labelNameByAddress[ADDRESS_SPACE_SIZE];
 };
 
-struct AssemblerResult assemble(char* source);
+struct AssemblerResult assemble(struct Token* tokens);
 
 #endif

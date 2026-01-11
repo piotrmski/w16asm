@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include "program-input/program-input.h"
 #include "assembler/assembler.h"
+#include "preprocessor/preprocessor.h"
 #include "../common/exit-code.h"
 
 #define IO_INTERFACE_ADDRESS 0x1fff
@@ -54,7 +55,7 @@ int main(int argc, const char * argv[]) {
 
     fclose(asmFile);
 
-    struct AssemblerResult result = assemble(asmFileContents);
+    struct AssemblerResult result = assemble(preprocess(asmFileContents));
 
     int programSize = 0;
 

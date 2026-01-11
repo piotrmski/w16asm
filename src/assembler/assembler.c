@@ -1,5 +1,5 @@
 #include "assembler.h"
-#include "../tokenizer/tokenizer.h"
+#include "../shared/shared.h"
 #include "../../common/exit-code.h"
 #include <stdbool.h>
 #include <string.h>
@@ -12,18 +12,6 @@
 #define MAX_LABEL_USES 0x2000
 #define MAX_IMMEDIATE_VAL_USES 0x2000
 #define MAX_LABEL_NAME_LEN_INCL_0 0x20
-
-enum Instruction {
-    InstructionLd = 0,
-    InstructionNot = 1,
-    InstructionAdd = 2,
-    InstructionAnd = 3,
-    InstructionSt = 4,
-    InstructionJmp = 5,
-    InstructionJmn = 6,
-    InstructionJmz = 7,
-    InstructionInvalid
-};
 
 enum Directive {
     DirectiveOrg,
@@ -69,7 +57,7 @@ struct EscapeSequenceParseResult {
     int length;
 };
 
-static char* sourceString;
+static struct Token* tokensArray;
 static int currentAddress = 0;
 static bool programMemoryWritten[ADDRESS_SPACE_SIZE] = { false };
 static struct LabelDefinition labelDefinitions[MAX_LABEL_DEFS];
@@ -116,23 +104,6 @@ static void assertCanAddImmediateValue(int lineNumber) {
     }
 }
 
-static char charUppercase(char ch) {
-    if (ch >= 'a' && ch <= 'z') return ch - 0x20;
-    else return ch;
-}
-
-static bool stringsEqualCaseInsensitive(char* string1, char* string2) {
-    for (int i = 0;; ++i) {
-        if (charUppercase(string1[i]) != charUppercase(string2[i])) {
-            return false;
-        }
-
-        if (string1[i] == 0 || string2[i] == 0) {
-            return true;
-        }
-    }
-}
-
 static enum Instruction getInstruction(char* name) {
     if (stringsEqualCaseInsensitive(name, "LD")) {
         return InstructionLd;
@@ -152,20 +123,6 @@ static enum Instruction getInstruction(char* name) {
         return InstructionJmz;
     } else {
         return InstructionInvalid;
-    }
-}
-
-static const char* getInstructionName(enum Instruction instruction) {
-    switch (instruction) {
-        case InstructionLd: return "LD"; 
-        case InstructionNot: return "NOT"; 
-        case InstructionAdd: return "ADD"; 
-        case InstructionAnd: return "AND"; 
-        case InstructionSt: return "ST"; 
-        case InstructionJmp: return "JMP"; 
-        case InstructionJmn: return "JMN"; 
-        case InstructionJmz: return "JMZ"; 
-        case InstructionInvalid: return "";
     }
 }
 
@@ -229,7 +186,10 @@ struct LabelDefinition* findLabelDefinition(struct LabelUse* labelUse) {
 }
 
 static struct Token getNextToken() {
-    return getToken(&sourceString);
+    if (tokensArray->value == NULL) {
+        return *tokensArray;
+    }
+    return *(tokensArray++);
 }
 
 static struct Token getNextNonEmptyToken() {
@@ -636,8 +596,8 @@ static void resolveLabels() {
     }
 }
 
-struct AssemblerResult assemble(char* source) {
-    sourceString = source;
+struct AssemblerResult assemble(struct Token* tokens) {
+    tokensArray = tokens;
 
     while (parseStatement()) {}
 
